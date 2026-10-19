@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Hotel Appriser</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script>
+      let user_name = sessionStorage.getItem("hotelAppriserUsername") || "";
+
+      function updateLoginButton() {
+        const loginbutton = document.getElementById("login-button");
+        loginbutton.textContent = user_name ? "Logout" : "Login";
+        loginbutton.onclick = user_name ? logout : openLogin;
+      }
+
+      function logout() {
+        user_name = "";
+        sessionStorage.removeItem("hotelAppriserUsername");
+        document.getElementById("hotels-grid").innerHTML = "";
+        updateLoginButton();
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        updateLoginButton();
+        if (user_name) {
+          loadHotels();
+        }
+      });
+
+      function createHotelCard(
+        hotel_id,
+        hotel_name,
+        hotel_address,
+        hotel_rating,
+      ) {
+        let hotelcard = `
+        <div class="hotel-card">
+        <div class="hotel-meta">
+          <div class="meta-row"><span class="meta-label">Hotel Name:</span><span>${hotel_name}</span></div>
+          <div class="meta-row"><span class="meta-label">Address:</span><span>${hotel_address}</span></div>
+          <div class="meta-row"><span class="meta-label">Average Rating:</span><span>${hotel_rating.toFixed(2)}</span></div>
+        </div>
+        <div class="hotel-image"><img id="hotel_img_${hotel_id}" class="hotel_img" src=""></img></div>
+        <div class="card-footer">
+          <div class="round-btn" onclick="openAddReview(${hotel_id})">Add Your Review</div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;</div>
+          <div class="round-btn" onclick="openReviews(${hotel_id})">View Reviews</div>
+        </div>
+        </div>
+        `;
+
+        return hotelcard;
+      }
+
+      async function loadHotels() {
+        let hotelcards = "";
+        let hotelids = [];
+        const hotelsUrl = "http://localhost:3000/hotels";
+        const hotelImageUrl = "http://localhost:3000/hotelimage?hotel_id=";
+
+        try {
+          let res = await fetch(hotelsUrl);
+
+          let response = await res.json();
+
+          for (const hotel1 of response) {
+            hotelcards += createHotelCard(
+              hotel1.hotel_id,
+              hotel1.name,
+              hotel1.address,
+              hotel1.rating,
+            );
+            hotelids.push(hotel1.hotel_id);
+          }
+
+          document.getElementById("hotels-grid").innerHTML = hotelcards;
+
+          for (const hotel_id1 of hotelids) {
+            // 1. Send the GET request
+            res = await fetch(hotelImageUrl + hotel_id1);
+
+            // 2. Convert the response payload into a binary Blob
+            const imageBlob = await res.blob();
+
+            // 3. Create a local DOMString URL representing the blob object
+            const objectURL = URL.createObjectURL(imageBlob);
+
+            // 4. Assign it to an <img> element's src attribute
+            document.getElementById("hotel_img_" + hotel_id1).src = objectURL;
+          }
+        } catch (error) {
+          alert(error.message);
+        }
+      }
+
+      async function addReview(hotel_id) {
+        const addReviewUrl = "http://localhost:3000/addReview";
+
+        let reviews = document.getElementById("reviewcomments").value;
+        let dropdown = document.getElementById("selectedrating");
+        let selectedrating = dropdown.options[dropdown.selectedIndex].value;
+
+        if (!user_name) {
+          openLogin();
+          return;
+        }
+
+        try {
+          const response = await fetch(addReviewUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify({
+              hotel_id,
+              username: user_name,
+              reviews,
+              rating: selectedrating,
+            }),
+          });
+
+          if (!response.ok) {
+            const result = await response.json();
+            throw new Error(
+              result.error ||
+                `addReview failed with status: ${response.status}`,
+            );
+          }
+
+          document.getElementById("addReview_error").innerHTML = "";
+          document.getElementById("reviewcomments").value = "";
+          closeAddReview();
+          await loadHotels();
+        } catch (error) {
+          document.getElementById("addReview_error").innerHTML =
+            "Error! " + error.message;
+        }
+      }
+
+      function createReview(hotel_id, username, hotel_review, hotel_rating) {
+        let review = `
+          <div class="review">
+          <div class="review-head"><span class="review-user">User:</span><span>${username}</span></div>
+          <div class="review-head"><span>Rating:</span><span>${hotel_rating}</span></div>
+          <div class="review-comment">${hotel_review}</div>
+          </div>
+        `;
+
+        return review;
+      }
+
+      async function loadReviews(hotel_id) {
+        let reviews = "";
+        const reviewsUrl = "http://localhost:3000/reviews?hotel_id=" + hotel_id;
+
+        try {
+          const res = await fetch(reviewsUrl);
+          const response = await res.json();
+
+          for (const review1 of response) {
+            reviews += createReview(
+              review1.hotel_id,
+              review1.username,
+              review1.hotel_review,
+              review1.hotel_rating,
+            );
+          }
+        } catch (error) {}
+
+        document.getElementById("reviews").innerHTML = reviews;
+      }
+
+      function openLogin() {
+        document.getElementById("loginPopup").style.display = "flex";
+      }
+
+      function closeLogin() {
+        document.getElementById("loginPopup").style.display = "none";
+      }
+
+      function openAddReview(hotel_id) {
+        if (!user_name) {
+          openLogin();
+          return;
+        }
+
+        let addreview_submit = `
+          <div class="addreview-submit-button" onclick="addReview(${hotel_id})">
+            Submit Review
+          </div>
+        `;
+
+        document.getElementById("addreview-submit").innerHTML =
+          addreview_submit;
+        document.getElementById("AddReviewPopup").style.display = "flex";
+      }
+
+      function closeAddReview() {
+        document.getElementById("AddReviewPopup").style.display = "none";
+      }
+
+      function openReviews(hotel_id) {
+        document.getElementById("reviewsPopup").style.display = "flex";
+        loadReviews(hotel_id);
+      }
+
+      function closeReviews() {
+        document.getElementById("reviewsPopup").style.display = "none";
+      }
+
+      async function login() {
+        const loginUrl = "http://localhost:3000/login";
+
+        let username = document.getElementById("username").value;
+        let password = document.getElementById("password").value;
+
+        try {
+          // 1. Make the POST request to the login endpoint
+          const response = await fetch(loginUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            // 2. Convert JavaScript object into a JSON string
+            body: JSON.stringify({ username, password }),
+          });
+
+          // 3. Check if the server response is successful (status status 200-299)
+          if (!response.ok) {
+            throw new Error(`Login failed with status: ${response.status}`);
+          }
+          user_name = username;
+          sessionStorage.setItem("hotelAppriserUsername", user_name);
+          document.getElementById("login_error").innerHTML = "";
+          closeLogin();
+          loadHotels();
+          updateLoginButton();
+        } catch (error) {
+          document.getElementById("login_error").innerHTML =
+            "Error! " + error.message;
+        }
+      }
+    </script>
+  </head>
+
+  <body>
+    <header class="topbar">
+      <img class="site-logo" src="./logo.png" alt="Hotel Appriser" />
+      <div id="login-button" class="login-button" onclick="openLogin()">
+        Login
+      </div>
+    </header>
+    <div id="page" class="page">
+      <div id="hotels-grid" class="hotels-grid">
+        <!--
+      
+      <div class="hotel-card">
+        <div class="hotel-meta">
+          <div class="meta-row"><span class="meta-label">Hotel Name:</span><span></span></div>
+          <div class="meta-row"><span class="meta-label">Address:</span><span></span></div>
+          <div class="meta-row"><span class="meta-label">Average Rating:</span><span></span></div>
+        </div>
+        <div class="hotel-image">Hotel image</div>
+        <div class="card-footer"><div class="round-btn" onclick="openReviews()">View Hotel</div></div>
+      </div>
+      --></div>
+    </div>
+
+    <!-- Login Popup -->
+    <div id="loginPopup" class="login-popup">
+      <div class="login-box">
+        <!-- Close button -->
+        <span class="login-close-button" onclick="closeLogin()">&times;</span>
+
+        <h2>Login</h2>
+
+        <div>
+          <label for="username">Username</label>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            placeholder="Enter username"
+            required
+          />
+
+          <label for="password">Password</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Enter password"
+            required
+          />
+
+          <div class="login-submit-button" onclick="login()">Sign In</div>
+          <div id="login_error" class="login_error"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hotel Reviews Popup -->
+    <div id="reviewsPopup" class="reviews-popup">
+      <div class="reviews-box">
+        <!-- Close button -->
+        <span class="reviews-close-button" onclick="closeReviews()"
+          >&times;</span
+        >
+        <div id="reviews" class="reviews">
+          <!--
+        <div class="review">
+          <div class="review-head"><span class="review-user">User:</span><span></span></div>
+          <div class="review-head"><span>Rating:</span><span></span></div>
+          <div class="review-comment"></div>
+        </div>
+        --></div>
+      </div>
+    </div>
+
+    <!-- Add Review Popup -->
+    <div id="AddReviewPopup" class="addreview-popup">
+      <div class="addreview-box">
+        <!-- Close button -->
+        <span class="addreview-close-button" onclick="closeAddReview()"
+          >&times;</span
+        >
+
+        <div style="margin-top: 28px">
+          <div style="margin-bottom: 8px">Comments</div>
+          <textarea
+            id="reviewcomments"
+            placeholder="Write your comments"
+          ></textarea>
+        </div>
+
+        <div>
+          <span>Please rate the hotel:</span>
+          <select id="selectedrating" style="width: 60px">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+        </div>
+
+        <div id="addreview-submit">
+          <!--
+        <div class="addreview-submit-button" onclick="addReview()">
+            Submit Review
+        </div>
+        --></div>
+        <div id="addReview_error" class="addReview_error"></div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "name": "hotelappriser",
+  "version": "1.0.0",
+  "description": "Hotel Appriser Web Application",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "db": "node db/seed.js"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.14.0",
+    "better-sqlite3": "^12.11.1",
+    "cors": "^2.8.5",
+    "drizzle-orm": "^0.36.0",
+    "express": "^4.21.0"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.28.0"
+  }
+}

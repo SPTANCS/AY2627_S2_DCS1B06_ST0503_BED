@@ -1,13 +1,4 @@
 // Slide 19
-// let delayedFunction = () => {console.log("Message received!")};
-// async function delayed() {
-//     await new Promise((resolve) => {
-//         setTimeout(resolve, 2000);
-//     }).then(delayedFunction);
-//     console.log("delayedFunction has completed.");
-// }
-// delayed();
-
 // A simple function that displays a message
 let delayedFunction = (message) => {
     console.log("3. Message received after a few seconds: " + message);

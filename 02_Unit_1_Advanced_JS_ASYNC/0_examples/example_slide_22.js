@@ -1,11 +1,3 @@
-// Slide 22
-// Pending
-// let successfn  = (value) => value;
-// let rejectedfn = (reason) => reason;
-// let promise1   = new Promise(successfn, rejectedfn);
-// console.log(promise1);
-
-
 // Slide 22 - Understanding the Pending State
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise
 //

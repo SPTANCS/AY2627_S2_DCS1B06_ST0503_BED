@@ -1,13 +1,34 @@
 // Slide 22
-
 // Pending
-let successfn  = (value) => value;
+// let successfn  = (value) => value;
+// let rejectedfn = (reason) => reason;
+// let promise1   = new Promise(successfn, rejectedfn);
+// console.log(promise1);
 
-let rejectedfn = (reason) => reason;
 
-// A promise is an object that represents the eventual completion (or failure) 
-// of an asynchronous operation and its resulting value.
-let promise1   = new Promise(successfn, rejectedfn); // Promise { <pending> }
+// Slide 22 - Understanding the Pending State
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise
+//
+// A Promise represents the eventual completion or failure
+// of an asynchronous operation.
+//
+// The Promise constructor accepts ONE argument:
+// an executor function.
+//
+// JavaScript automatically passes two functions
+// into the executor:
+// resolve() - changes the Promise to fulfilled
+// reject()  - changes the Promise to rejected
+
+let promise1 = new Promise(function(resolve, reject) {
+
+    // Neither resolve() nor reject() is called.
+
+    // Therefore, the Promise remains in the pending state.
+
+});
 
 console.log(promise1);
-// Output: “Promise { <pending> }”
+
+// Output (Node.js):
+// Promise { <pending> }

@@ -9,7 +9,7 @@ let promise1   = Promise.resolve("Success");
 //     resolve("Success");
 // });
 
-promise1.then(successfn,rejectedfn);
+promise1.then(successfn, rejectedfn);
 
 console.log(promise1);
 // Output: "Promise { 'Success' }"

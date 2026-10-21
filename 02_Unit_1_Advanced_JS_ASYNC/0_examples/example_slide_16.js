@@ -1,5 +1,6 @@
 // Slide 16
-
+// https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout
+//
 // When an asynchronous function is executed, JavaScript does not wait 
 // for the function to complete before running the next line of code!
 

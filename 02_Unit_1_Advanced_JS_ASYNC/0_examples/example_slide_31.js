@@ -1,35 +1,65 @@
-// Slide 31
+// Slide 31 - Understanding .catch() and .finally()
+
+// Returns a Promise that resolves after 3 seconds.
 let resolvefn = function (result) {
-  return new Promise(function (resolve, reject) {
-    setTimeout(function () {
-      console.log("#" + result + " resolved!");
-      resolve(result + 1);
-    }, 3000);
-  });
+    return new Promise(function (resolve) {
+        setTimeout(function () {
+            console.log("#" + result + " resolved!");
+            resolve(result + 1); // Pass the next value to the chain.
+        }, 3000);
+    });
 };
 
+// Returns a Promise that rejects after 3 seconds.
 let rejectfn = function (result) {
-  return new Promise(function (resolve, reject) {
-    setTimeout(function () {
-      console.log("#" + result + " rejected!");
-      reject(result + 1);
-    }, 3000);
-  });
+    return new Promise(function (resolve, reject) {
+        setTimeout(function () {
+            console.log("#" + result + " rejected!");
+            reject(result + 1); // Pass the rejection reason.
+        }, 3000);
+    });
 };
 
-let catchfn = function () {
-  return new Promise(() => console.log("Caught final rejection!"));
+// Handles any rejection that reaches .catch().
+let catchfn = function (result) {
+    console.log("Caught final rejection! #" + result + " rejected!");
+
+    // No Promise is returned, so the rejection is handled.
+    // The Promise returned by .catch() is fulfilled with undefined.
 };
+
+// Starts the Promise chain and demonstrates .then(), .catch(), and .finally().
+console.clear(); // Clear the console for clarity.
+
+// Change to false to test the fulfilled scenario.
+let shouldReject = false;
 
 let promise = new Promise(function (resolve, reject) {
-  setTimeout(function () {
-    console.log("#1 rejected!");
-    reject(2); // change to resolve(2) and test
-  }, 2000);
-  })
-  .then(resolvefn, rejectfn)
-  .then(resolvefn, rejectfn)
-  .catch(catchfn)
-  .finally(() => {
+    setTimeout(function () {
+        if (shouldReject) {
+            console.log("#1 rejected!");
+            reject(2);
+        } else {
+            console.log("#1 resolved!");
+            resolve(2);
+        }
+    }, 2000);
+})
+.then(resolvefn, rejectfn)
+.then(resolvefn, rejectfn)
+
+// Executes only if the previous Promise is fulfilled.
+// Displays the final resolved value.
+.then((result) => {
+    console.log("#" + result + " resolved!");
+})
+
+// Handles any rejection that reaches this point.
+// If the rejection is handled, the chain can continue.
+.catch(catchfn)
+
+// Executes when the preceding Promise settles,
+// regardless of whether it is fulfilled or rejected.
+.finally(() => {
     console.log("End of Promise");
-  });
+});

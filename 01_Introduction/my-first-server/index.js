@@ -1,3 +1,6 @@
+// https://www.npmjs.com/package/express
+// https://www.npmjs.com/package/nodemon
+
 import express from 'express';
 
 const app = express();

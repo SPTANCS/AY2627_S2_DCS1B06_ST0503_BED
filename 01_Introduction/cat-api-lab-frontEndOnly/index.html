@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Cat API Lab — Curiosity is encouraged</title>
+    <meta
+      name="description"
+      content="Play with cat facts and breeds while learning HTTP requests, JSON and pagination."
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <a class="logo" href="#">🐾 CAT API LAB<span>THE CURIOSITY CLUB</span></a
+      ><span class="badge">● LIVE API PLAYGROUND</span
+      ><button
+        class="help"
+        data-help="overview"
+        aria-label="How this app works"
+      >
+        [?]
+      </button>
+    </header>
+    <main>
+      <section class="hero">
+        <div>
+          <div class="eyebrow">SMALL CATS. BIG DISCOVERIES.</div>
+          <h1>Stay curious.<br />Think like a <em>cat.</em></h1>
+          <p>
+            A little cat knowledge. A lot of API magic.<br />Explore, collect,
+            and peek behind every request.
+          </p>
+          <div class="hero-tags">
+            <span>GET requests</span><span>JSON responses</span
+            ><span>Zero API keys</span>
+          </div>
+        </div>
+        <div class="cat-art" aria-hidden="true">
+          <div class="orbit">{ "mood": "curious" }</div>
+          <div class="cat">🐈</div>
+          <span class="bubble">Curiosity is encouraged ↗</span
+          ><span class="spark">✦</span>
+        </div>
+      </section>
+      <div class="workspace-heading">
+        <h2>Your curiosity playground</h2>
+        <span id="collection">0 facts collected</span>
+      </div>
+      <nav aria-label="Playground sections">
+        <button class="tab active" data-tab="fact">✦ Random fact</button
+        ><button class="tab" data-tab="facts">▤ Fact library</button
+        ><button class="tab" data-tab="breeds">🐾 Breed explorer</button
+        ><button class="tab" data-tab="saved">♡ My collection</button>
+      </nav>
+      <div class="workspace">
+        <section class="play-panel">
+          <div class="panel-top">
+            <span id="endpoint" class="endpoint">GET /fact</span
+            ><button
+              class="help"
+              id="endpoint-help"
+              aria-label="Explain this endpoint"
+            >
+              [?]
+            </button>
+          </div>
+          <div id="controls"></div>
+          <div id="content" aria-live="polite"></div>
+          <div id="actions"></div>
+        </section>
+        <aside>
+          <div class="inspector-title">
+            <h3>Behind the whiskers</h3>
+            <button
+              class="help"
+              data-help="inspector"
+              aria-label="Explain request inspector"
+            >
+              [?]
+            </button>
+          </div>
+          <p class="aside-intro">The real request powering your screen.</p>
+          <div class="request-label">
+            REQUEST
+            <button
+              class="help"
+              data-help="request"
+              aria-label="Explain HTTP request"
+            >
+              [?]
+            </button>
+          </div>
+          <code id="request-url">Waiting for your first request…</code>
+          <div class="stats">
+            <span id="status">READY</span><span id="timing">— ms</span>
+          </div>
+          <div class="inspector-tabs">
+            <button class="selected" data-inspect="json">Response JSON</button
+            ><button data-inspect="code">Fetch code</button>
+          </div>
+          <pre id="inspector">Click “Surprise me” to send a request.</pre>
+          <div class="tip">
+            <span>💡</span>
+            <p id="tip">
+              Click any <b>[?]</b> to uncover the back-end concepts behind the
+              fun.
+            </p>
+          </div>
+        </aside>
+      </div>
+      <section class="learn-strip">
+        <div>
+          <span>01</span><b>Ask the server</b>
+          <p>A URL identifies the resource.</p>
+        </div>
+        <div>
+          <span>02</span><b>Read the response</b>
+          <p>Check status, then parse JSON.</p>
+        </div>
+        <div>
+          <span>03</span><b>Update the interface</b>
+          <p>Render data without reloading.</p>
+        </div>
+        <button
+          class="help"
+          data-help="flow"
+          aria-label="Explain request response flow"
+        >
+          [?]
+        </button>
+      </section>
+      <footer>
+        Made for curious developers. Powered by
+        <a href="https://catfact.ninja/" target="_blank" rel="noopener"
+          >Cat Facts API ↗</a
+        ><span>Plain HTML · CSS · JavaScript</span>
+      </footer>
+    </main>
+    <dialog id="help-dialog">
+      <button id="close-help" aria-label="Close explanation">×</button>
+      <div class="eyebrow">A PEEK UNDER THE HOOD</div>
+      <h2 id="help-title"></h2>
+      <div id="help-body"></div>
+      <button class="primary" id="got-it">Got it 🐾</button>
+    </dialog>
+    <script src="app.js"></script>
+  </body>
+</html>

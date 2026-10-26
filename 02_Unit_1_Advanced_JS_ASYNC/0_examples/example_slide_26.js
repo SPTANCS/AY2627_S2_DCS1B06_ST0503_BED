@@ -6,13 +6,14 @@ let promise = new Promise(function (resolve, reject) {
       console.log("#1 resolved!");
     }, 2000); 
   })
-  .then(function (resolve, reject) {
+  .then(function (onResolvedValue) {
     setTimeout(function () {
       console.log("#2 resolved!");
     }, 3000);
   })
-  .then(function (resolve, reject) {
+  .then(function (onResolvedValue) {
     setTimeout(function () {
       console.log("#3 resolved!");
     }, 1500);
   });
+

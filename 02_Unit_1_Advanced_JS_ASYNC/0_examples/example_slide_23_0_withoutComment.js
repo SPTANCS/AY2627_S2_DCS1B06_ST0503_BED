@@ -31,4 +31,3 @@ checkBid(randomBid).then(successfn, rejectedfn);
 
 
 
-

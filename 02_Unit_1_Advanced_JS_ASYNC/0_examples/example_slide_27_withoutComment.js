@@ -5,7 +5,7 @@ console.clear();
 let promise = new Promise(function (resolve, reject) {
         setTimeout(function () {
             console.log("#1 resolved!");
-            resolve("this is the resolved value");
+            resolve("this is the resolved value"); // <---- 
         }, 2000);
     }).then(function (onResolvedValue) {
         setTimeout(function () {

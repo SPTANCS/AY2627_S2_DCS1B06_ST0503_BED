@@ -9,6 +9,7 @@ async function delayed() {
 
     console.log("2. Starting the delay...");
 
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise
     // Create a Promise that will resolve after 2 seconds
     // await pauses the execution of THIS async function
     // until the Promise is fulfilled.

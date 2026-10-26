@@ -5,8 +5,7 @@ import express from 'express';
 
 const app = express();
 
-
-app.use(function (req, res, next) {
+app.use((req, res, next) => {
   const {url, method, path} = req;
 
   console.log("A new request");
@@ -27,6 +26,27 @@ app.get('/', (req, res) => {
 
 app.get('/hello', function (req, res ) {
   res.send("Hello !");
+});
+
+app.get('/hello/:name', function (req, res ) {
+
+  let num = req.query.num;
+  if (num) {
+    num = Number(num);
+  } else {
+    num = 1;
+  }
+  console.log(num);
+
+  // console.log(req.params.name);
+  // const name = req.params.name;
+  const {name} = req.params;
+
+  let str = "";
+  for (let i=0; i<num; i++) {
+    str += `Hello ! ${name}<br>`;
+  }
+  res.send(str);
 });
 
 

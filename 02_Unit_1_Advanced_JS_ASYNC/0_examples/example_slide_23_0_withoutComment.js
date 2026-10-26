@@ -27,6 +27,8 @@ console.clear();
 // Generate a random bid between 1 and 200.
 let randomBid = Math.floor(Math.random() * 200) + 1;
 
+
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/then
 checkBid(randomBid).then(successfn, rejectedfn);
 
 

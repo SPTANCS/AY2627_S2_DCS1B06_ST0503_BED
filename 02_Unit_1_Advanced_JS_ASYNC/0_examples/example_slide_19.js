@@ -14,7 +14,7 @@ async function delayed() {
     // await pauses the execution of THIS async function
     // until the Promise is fulfilled.
     // result will hold the value passed to resolve() when the Promise is fulfilled.
-    let result = await new Promise((resolve) => {
+    let result = await new Promise((resolve, reject) => {
 
         // setTimeout schedules the callback to run after 2000ms
         setTimeout(() => {

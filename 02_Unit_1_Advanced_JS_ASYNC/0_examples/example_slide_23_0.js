@@ -1,5 +1,6 @@
 // Slide 23 - Understanding Promise, resolve(), reject(), and .then()
 
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/then
 // This function is called when the Promise is FULFILLED (resolved).
 // It receives the value passed to resolve() as its argument.
 let successfn = (msg) => {

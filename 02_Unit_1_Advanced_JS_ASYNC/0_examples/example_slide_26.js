@@ -1,6 +1,7 @@
 // Slide 26
 // V1 Promise object that cannot be chained properly because resolve() function was not called in new Promise object.
 
+console.clear();
 let promise = new Promise(function (resolve, reject) {
     setTimeout(function () {
       console.log("#1 resolved!");

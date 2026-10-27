@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab 4 — The Shop Is Open</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&amp;family=Syne:wght@400;700;800&amp;family=Inter:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5F2EB;
+    --ink: #1a1a18;
+    --ink2: #4a4a46;
+    --ink3: #8a8a84;
+    --accent: #D45C2A;
+    --accent-light: #F5E8DF;
+    --green: #2A7D4F;
+    --green-light: #DFF0E8;
+    --blue: #1E5FA8;
+    --blue-light: #DDE9F7;
+    --yellow: #C69A00;
+    --yellow-light: #FDF5D4;
+    --purple: #6B3FA0;
+    --purple-light: #EEE6F7;
+    --border: #D6D0C4;
+    --card: #FDFAF5;
+    --mono: 'DM Mono', monospace;
+    --head: 'Syne', sans-serif;
+    --body: 'Inter', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 15px;
+    line-height: 1.65;
+  }
+
+  .header {
+    background: var(--ink);
+    color: #FDFAF5;
+    padding: 48px 48px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 280px; height: 280px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0.12;
+  }
+  .header-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #7a7a74;
+    margin-bottom: 12px;
+  }
+  .header h1 {
+    font-family: var(--head);
+    font-size: 42px;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 14px;
+  }
+  .header h1 span { color: var(--accent); }
+  .header-sub {
+    font-size: 15px;
+    color: #b0b0a8;
+    max-width: 560px;
+    line-height: 1.6;
+  }
+  .badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 24px; }
+  .badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid #3a3a36;
+    color: #c0c0b8;
+    letter-spacing: 0.06em;
+  }
+
+  .story-banner {
+    background: var(--accent);
+    color: #fff;
+    padding: 28px 48px;
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+  }
+  .story-icon { font-size: 32px; flex-shrink: 0; margin-top: 2px; }
+  .story-banner h2 { font-family: var(--head); font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+  .story-banner p { font-size: 14px; opacity: 0.92; line-height: 1.6; }
+
+  .swagger-bar {
+    background: #1E1E1C;
+    padding: 14px 48px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: #a0a09a;
+    font-family: var(--mono);
+    flex-wrap: wrap;
+  }
+  .swagger-bar .sw-label { color: #85c1e9; font-weight: 500; }
+  .swagger-bar .sw-url  { color: #ce9178; }
+  .swagger-dot { width: 8px; height: 8px; border-radius: 50%; background: #2ecc71; flex-shrink: 0; }
+  .sw-code { background: #2a2a28; color: #ce9178; padding: 1px 6px; border-radius: 3px; font-family: var(--mono); }
+
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 48px 48px 80px;
+  }
+
+  .phase-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 44px 0 18px;
+  }
+  .phase-header:first-child { margin-top: 0; }
+  .phase-pill {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+  .pill-guided { background: var(--blue-light);   color: var(--blue);   }
+  .pill-solo   { background: var(--green-light);  color: var(--green);  }
+  .pill-query  { background: var(--purple-light); color: var(--purple); }
+  .phase-line  { flex: 1; height: 1px; background: var(--border); }
+  .phase-title { font-family: var(--head); font-size: 13px; font-weight: 700; color: var(--ink3); white-space: nowrap; }
+
+  .task-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .task-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 22px 28px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .task-number {
+    font-family: var(--head);
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 2px;
+    min-width: 36px;
+  }
+  .num-blue   { color: var(--blue);   }
+  .num-green  { color: var(--green);  }
+  .num-purple { color: var(--purple); }
+
+  .task-title-block { flex: 1; }
+  .task-route-line { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap; }
+  .method-pill {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #E6EDFA;
+    color: var(--blue);
+  }
+  .route-path { font-family: var(--mono); font-size: 14px; color: var(--ink); }
+  .task-title { font-family: var(--head); font-size: 19px; font-weight: 700; margin-bottom: 3px; }
+  .task-subtitle { font-size: 13px; color: var(--ink3); }
+
+  .task-body { padding: 22px 28px; }
+  .task-body > p {
+    font-size: 14px;
+    color: var(--ink2);
+    margin-bottom: 14px;
+    line-height: 1.65;
+  }
+  .task-body > p:last-child { margin-bottom: 0; }
+  .task-body > p strong { color: var(--ink); font-weight: 500; }
+
+  .req-list { list-style: none; margin: 12px 0; }
+  .req-list li {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 14px;
+    color: var(--ink2);
+    padding: 7px 0;
+    border-bottom: 1px dashed var(--border);
+    line-height: 1.5;
+  }
+  .req-list li:last-child { border-bottom: none; }
+  .req-check {
+    width: 17px; height: 17px;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    background: #fff;
+  }
+
+  .http-example {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 14px 0;
+  }
+  .http-example .label {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink3);
+    margin-bottom: 10px;
+  }
+  .http-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+  .http-row:last-child { margin-bottom: 0; }
+  .http-method {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #fff;
+    background: var(--blue);
+    padding: 2px 7px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .http-url { font-family: var(--mono); font-size: 12.5px; color: var(--ink); }
+  .http-arrow { color: var(--ink3); font-size: 12px; }
+  .http-status { font-family: var(--mono); font-size: 11px; padding: 2px 7px; border-radius: 3px; }
+  .s200 { background: var(--green-light);  color: var(--green);  }
+  .s400 { background: var(--yellow-light); color: var(--yellow); }
+  .s404 { background: #FDEAEA;            color: #B03030;        }
+
+  .syntax-strip {
+    background: #1E1E1C;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 14px 0;
+  }
+  .syntax-strip .label {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #6a9955;
+    margin-bottom: 10px;
+  }
+  .syntax-strip pre {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.8;
+    color: #c8c8bc;
+    white-space: pre;
+  }
+  .cm { color: #6a9955; }
+  .ck { color: #569cd6; }
+  .cs { color: #ce9178; }
+  .cv { color: #9cdcfe; }
+  .cf { color: #dcdcaa; }
+  .cn { color: #b5cea8; }
+  .cp { color: #c586c0; }
+
+  .hint-box {
+    display: flex;
+    gap: 12px;
+    padding: 13px 16px;
+    border-radius: 8px;
+    margin: 12px 0;
+    align-items: flex-start;
+  }
+  .hint-box.blue   { background: var(--blue-light);   border-left: 3px solid var(--blue);   }
+  .hint-box.yellow { background: var(--yellow-light);  border-left: 3px solid var(--yellow); }
+  .hint-box.green  { background: var(--green-light);   border-left: 3px solid var(--green);  }
+  .hint-icon { font-size: 15px; flex-shrink: 0; margin-top: 2px; }
+  .hint-box p { font-size: 13px; color: var(--ink2); margin: 0; line-height: 1.6; }
+  .hint-box strong { color: var(--ink); font-weight: 500; }
+
+  .think-box {
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin: 14px 0;
+  }
+  .think-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink3);
+    margin-bottom: 10px;
+  }
+  .think-box p { font-size: 13.5px; color: var(--ink2); margin: 0 0 8px; line-height: 1.6; }
+  .think-box p:last-child { margin: 0; }
+  .think-box ul { padding-left: 18px; font-size: 13.5px; color: var(--ink2); line-height: 1.75; margin: 6px 0 8px; }
+
+  .steps { counter-reset: step; list-style: none; margin: 12px 0; }
+  .steps li {
+    counter-increment: step;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 9px;
+    font-size: 14px;
+    color: var(--ink2);
+    line-height: 1.55;
+  }
+  .steps li::before {
+    content: counter(step);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    width: 21px; height: 21px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .steps.blue   li::before { background: var(--blue-light);   color: var(--blue);   }
+  .steps.green  li::before { background: var(--green-light);  color: var(--green);  }
+  .steps.purple li::before { background: var(--purple-light); color: var(--purple); }
+
+  .divider { height: 1px; background: var(--border); margin: 36px 0; }
+
+  .footer {
+    background: var(--ink);
+    color: #6a6a64;
+    padding: 24px 48px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .footer span { color: var(--accent); }
+
+  code {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    background: #ECEAE4;
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  strong { font-weight: 500; }
+</style>
+</head><body><div class="header">
+<div class="header-meta">Backend Web Development · practical&nbsp;</div>
+<h1>The Shop Is <span>Open</span></h1>
+<p class="header-sub">The server is running and the inventory is ready — but every customer gets a blank response. Work through these tasks to build all the routes and open Byte &amp; Bite for business.</p>
+<div class="badges">
+<div class="badge">GET routes</div>
+<div class="badge">route params</div>
+<div class="badge">query params</div>
+<div class="badge">filtering</div>
+<div class="badge">sorting</div>
+</div>
+</div>
+<div class="story-banner">
+<div class="story-icon">🏪</div>
+<div>
+<h2>The Scenario</h2>
+<p>You've been hired as the backend developer for <strong>Byte &amp; Bite</strong> — a convenience store that sells snacks <em>and</em> electronics (long story). The owner set up the server and stocked the in-memory database, but forgot to write any routes. Every customer who visits the API gets nothing back. Work through the tasks below to get the shelves stocked and the doors open.</p>
+</div>
+</div>
+<div class="swagger-bar">
+<div class="swagger-dot"></div>
+<span class="sw-label">Test your routes live</span> <span>→ run <span class="sw-code">npm run dev</span>, then test in your browser/API client with:</span> <span class="sw-url">http://localhost:3000/&lt;route e.g. snacks or electronics&gt;</span></div>
+<div class="container"><!-- ══════════════════════════════════ Q1 ══ -->
+<div class="phase-header">
+<div class="phase-pill pill-guided">✦ Code-Along</div>
+<div class="phase-line"></div>
+<div class="phase-title">Question 1 of 7</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number num-blue">01</div>
+<div class="task-title-block">
+<div class="task-route-line">
+<div class="method-pill">GET</div>
+<div class="route-path">/snacks</div>
+</div>
+<div class="task-title">Stock the Snack Shelf</div>
+<div class="task-subtitle">Return all snacks to anyone who asks</div>
+</div>
+</div>
+<div class="task-body">
+<p>Right now, visiting <code>/snacks</code> does nothing — the handler is empty. Your first task is the simplest possible route: when a customer asks for snacks, give them all the snacks. Follow along with your tutor.</p>
+<p><strong>Requirements</strong></p>
+<ul class="req-list">
+<li><span class="req-check"></span>Return the entire <code>snacks</code> array as JSON</li>
+</ul>
+<div class="http-example">
+<div class="label">Expected behaviour</div>
+<div class="http-row"><span class="http-method">GET</span> <span class="http-url">/snacks</span> <span class="http-arrow">→</span> <span class="http-status s200">[ all 10 snacks ]</span></div>
+</div>
+<div class="syntax-strip">
+<div class="label">Express syntax — given to you</div>
+<pre><span class="cv">res</span>.<span class="cf">json</span>(<span class="cv">someArray</span>); <span class="cm">// sends the array as JSON</span></pre>
+</div>
+<p><strong>Steps</strong></p>
+<ol class="steps blue">
+<li>Call <code>res.json(snacks)</code> inside the <code>/snacks</code> handler.</li>
+<li>Save — nodemon will restart automatically.</li>
+<li>Open Swagger UI at <code>/api-docs</code> and try <code>GET /snacks</code>. You should see all 10 items.</li>
+<li>Run <code>npm test</code> to confirm.</li>
+</ol>
+</div>
+</div>
+<!-- ══════════════════════════════════ Q2 ══ -->
+<div class="phase-header">
+<div class="phase-pill pill-solo">★ Do It Yourself</div>
+<div class="phase-line"></div>
+<div class="phase-title">Question 2 of 7</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number num-green">02</div>
+<div class="task-title-block">
+<div class="task-route-line">
+<div class="method-pill">GET</div>
+<div class="route-path">/electronics</div>
+</div>
+<div class="task-title">Power Up the Electronics Aisle</div>
+<div class="task-subtitle">Same idea — different shelf</div>
+</div>
+</div>
+<div class="task-body">
+<p>The snack shelf is stocked. Now do the same for electronics. The logic is identical — only one thing changes. Try writing it from memory rather than copy-pasting.</p>
+<ul class="req-list">
+<li><span class="req-check"></span>Return the entire <code>electronics</code> array as JSON</li>
+</ul>
+<div class="http-example">
+<div class="label">Expected behaviour</div>
+<div class="http-row"><span class="http-method">GET</span> <span class="http-url">/electronics</span> <span class="http-arrow">→</span> <span class="http-status s200">[ all 10 electronics ]</span></div>
+</div>
+<div class="hint-box yellow"><span class="hint-icon">⚠️</span>
+<p><strong>Classic mistake:</strong> accidentally referencing the <code>snacks</code> variable inside the electronics handler. Double-check your variable name before you test.</p>
+</div>
+<p><strong>Steps</strong></p>
+<ol class="steps green">
+<li>Fill in the <code>app.get('/electronics', ...)</code> handler.</li>
+<li>Test it in Swagger UI — try <code>GET /electronics</code>.</li>
+<li>Run <code>npm test</code>.</li>
+</ol>
+</div>
+</div>
+<!-- ══════════════════════════════════ Q3 ══ -->
+<div class="phase-header">
+<div class="phase-pill pill-guided">✦ Code-Along</div>
+<div class="phase-line"></div>
+<div class="phase-title">Question 3 of 7</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number num-blue">03</div>
+<div class="task-title-block">
+<div class="task-route-line">
+<div class="method-pill">GET</div>
+<div class="route-path">/snacks/:id</div>
+</div>
+<div class="task-title">Find One Snack by ID</div>
+<div class="task-subtitle">Look up a specific item — and handle when it doesn't exist</div>
+</div>
+</div>
+<div class="task-body">
+<p>A customer walks up and asks: <em>"Do you have item number 7?"</em> This introduces a new concept: <strong>route parameters</strong>. The <code>:id</code> in the URL is a placeholder — Express captures whatever the user puts there and hands it to you in <code>req.params</code>.</p>
+<ul class="req-list">
+<li><span class="req-check"></span><code>/snacks/3</code> → return the matching snack object</li>
+<li><span class="req-check"></span><code>/snacks/99</code> → ID doesn't exist, return <code>{ "error": "Item not found" }</code></li>
+</ul>
+<div class="http-example">
+<div class="label">Expected behaviour</div>
+<div class="http-row"><span class="http-method">GET</span> <span class="http-url">/snacks/3</span> <span class="http-arrow">→</span> <span class="http-status s200">{ "id": 3, "name": "Candy Bar", "price": 1.25, "quantity": 80 }</span></div>
+<div class="http-row"><span class="http-method">GET</span> <span class="http-url">/snacks/99</span> <span class="http-arrow">→</span> <span class="http-status s404">{ "error": "Item not found" }</span></div>
+</div>
+<div class="syntax-strip">
+<div class="label">Express syntax — given to you</div>
+<pre><span class="ck">const</span> <span class="cv">id</span> = <span class="cv">req</span>.<span class="cv">params</span>.<span class="cv">id</span>;  <span class="cm">// always a string, e.g. "3"</span>
+
+<span class="cm">// Find an item in an array by a condition:</span>
+<span class="ck">const</span> <span class="cv">item</span> = <span class="cv">someArray</span>.<span class="cf">find</span>(<span class="cv">x</span> =&gt; <span class="cv">x</span>.<span class="cv">id</span> === <span class="cf">Number</span>(<span class="cv">id</span>));
+<span class="cm">// → returns the matching object, or undefined if nothing matches</span></pre>
+</div>
+<div class="think-box">
+<div class="think-title">🧠 Think before you code</div>
+<p>The ID from the URL is always a <em>string</em> like <code>"3"</code>, but the IDs in the array are <em>numbers</em> like <code>3</code>. Why does that matter when comparing with <code>===</code>?</p>
+<p>What does <code>.find()</code> return when nothing matches? How will you use that to decide what to send back?</p>
+</div>
+<p><strong>Steps</strong></p>
+<ol class="steps blue">
+<li>Read <code>req.params.id</code> and convert it to a number with <code>Number()</code>.</li>
+<li>Use <code>.find()</code> to search the <code>snacks</code> array for a matching <code>id</code>.</li>
+<li>If found → respond with the item using <code>res.json()</code>.</li>
+<li>If not found → respond with <code>{ "error": "Item not found" }</code>.</li>
+<li>Test both a valid and an invalid ID in Swagger UI, then run <code>npm test</code>.</li>
+</ol>
+</div>
+</div>
+<!-- ══════════════════════════════════ Q4 ══ -->
+<div class="phase-header">
+<div class="phase-pill pill-solo">★ Do It Yourself</div>
+<div class="phase-line"></div>
+<div class="phase-title">Question 4 of 7</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number num-green">04</div>
+<div class="task-title-block">
+<div class="task-route-line">
+<div class="method-pill">GET</div>
+<div class="route-path">/electronics/:id</div>
+</div>
+<div class="task-title">Find One Electronic by ID</div>
+<div class="task-subtitle">Apply the same pattern to the electronics shelf</div>
+</div>
+</div>
+<div class="task-body">
+<p>You know the pattern. Apply it to electronics — same logic, different array.</p>
+<ul class="req-list">
+<li><span class="req-check"></span><code>/electronics/2</code> → return the matching electronic object</li>
+<li><span class="req-check"></span><code>/electronics/99</code> → return <code>{ "error": "Item not found" }</code></li>
+</ul>
+<div class="http-example">
+<div class="label">Expected behaviour</div>
+<div class="http-row"><span class="http-method">GET</span> <span class="http-url">/electronics/2</span> <span class="http-arrow">→</span> <span class="http-status s200">{ "id": 2, "name": "USB Cable", "price": 9.99, "quantity": 100 }</span></div>
+<div class="http-row"><span class="http-method">GET</span> <span class="http-url">/electronics/99</span> <span class="http-arrow">→</span> <span class="http-status s404">{ "error": "Item not found" }</span></div>
+</div>
+<div class="think-box">
+<div class="think-title">🧠 Think before you code</div>
+<p>Before writing anything: what are the <em>exact</em> two things that differ from the snacks version? Name them. Then change only those two things.</p>
+</div>
+<p><strong>Steps</strong></p>
+<ol class="steps green">
+<li>Fill in the <code>app.get('/electronics/:id', ...)</code> handler.</li>
+<li>Test a valid ID and an invalid one in Swagger UI.</li>
+<li>Run <code>npm test</code>.</li>
+</ol>
+</div>
+</div>
+<!-- ══════════════════════════════════ Q5 ══ -->
+<div class="phase-header">
+<div class="phase-pill pill-guided">✦ Code-Along</div>
+<div class="phase-pill pill-query">◈ Query Params</div>
+<div class="phase-line"></div>
+<div class="phase-title">Question 5 of 7</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number num-purple">05</div>
+<div class="task-title-block">
+<div class="task-route-line">
+<div class="method-pill">GET</div>
+<div class="route-path">/</div>
+</div>
+<div class="task-title">The Store's Front Door</div>
+<div class="task-subtitle">Follow along — return everything, or filter by <code>?category</code></div>
+</div>
+</div>
+<div class="task-body">
+<p>The root route is the store entrance. By default it shows both shelves. But customers can pass a <code>?category=</code> query parameter to browse just one section. This introduces <strong>query parameters</strong> — optional key-value pairs appended to the URL after a <code>?</code>.</p>
+<ul class="req-list">
+<li><span class="req-check"></span>No params → return <code>{ snacks: [...], electronics: [...] }</code></li>
+<li><span class="req-check"></span><code>?category=snacks</code> → return only the snacks array</li>
+<li><span class="req-check"></span><code>?category=electronics</code> → return only the electronics array</li>
+<li><span class="req-check"></span><code>?category=drinks</code> or any other value → return an error message</li>
+</ul>
+<div class="http-example">
+<div class="label">Expected behaviour</div>
+<div class="http-row"><span class="http-method">GET</span> <span class="http-url">/</span> <span class="http-arrow">→</span> <span class="http-status s200">{ snacks: [...], electronics: [...] }</span></div>
+<div class="http-row"><span class="http-method">GET</span> <span class="http-url">/?category=snacks</span> <span class="http-arrow">→</span> <span class="http-status s200">[ all 10 snacks ]</span></div>
+<div class="http-row"><span class="http-method">GET</span> <span class="http-url">/?category=drinks</span> <span class="http-arrow">→</span> <span class="http-status s400">{ "error": "..." }</span></div>
+</div>
+<div class="syntax-strip">
+<div class="label">Express syntax — given to you</div>
+<pre><span class="ck">const</span> <span class="cv">category</span> = <span class="cv">req</span>.<span class="cv">query</span>.<span class="cv">category</span>;
+<span class="cm">// → "snacks", "electronics", or undefined if not provided</span></pre>
+</div>
+<div class="think-box">
+<div class="think-title">🧠 Think before you code</div>
+<p>There are three distinct outcomes. Map them out before touching the keyboard:</p>
+<ul>
+<li>No <code>category</code> param at all → what do you return?</li>
+<li><code>category</code> is <code>"snacks"</code> or <code>"electronics"</code> → what do you return?</li>
+<li><code>category</code> is something else → what do you return?</li>
+</ul>
+<p>What's the cleanest order to check these three cases? Does it matter which you handle first?</p>
+</div>
+<p><strong>Steps</strong></p>
+<ol class="steps purple">
+<li>Read <code>req.query.category</code> — it will be a string or <code>undefined</code>.</li>
+<li>If no category was provided, respond with <code>{ snacks, electronics }</code>.</li>
+<li>If it's <code>"snacks"</code> or <code>"electronics"</code>, respond with just that array.</li>
+<li>Otherwise, respond with an error message: <code>{ "error": "Invalid category" }</code>.</li>
+<li>Test all four cases in Swagger UI, then run <code>npm test</code>.</li>
+</ol>
+</div>
+</div>
+<!-- ══════════════════════════════════ Q6 ══ -->
+<div class="phase-header">
+<div class="phase-pill pill-solo">★ Do It Yourself</div>
+<div class="phase-pill pill-query">◈ Query Params</div>
+<div class="phase-line"></div>
+<div class="phase-title">Question 6 of 7</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number num-green">06</div>
+<div class="task-title-block">
+<div class="task-route-line">
+<div class="method-pill">GET</div>
+<div class="route-path">/</div>
+</div>
+<div class="task-title">Filter by Price</div>
+<div class="task-subtitle">On your own — extend <code>GET /</code> with <code>?maxPrice</code></div>
+</div>
+</div>
+<div class="task-body">
+<p>Still in the same <code>GET /</code> handler from Q5. Now extend it — customers want to filter results by price. Add a <code>?maxPrice</code> query param that works alongside <code>?category</code>. This one requires more careful thinking — query params always arrive as strings, so you need to validate before you can use them.</p>
+<ul class="req-list">
+<li><span class="req-check"></span>No <code>maxPrice</code> → existing behaviour from Q5 unchanged</li>
+<li><span class="req-check"></span><code>?maxPrice=5</code> → filter whichever items are being returned to <code>price &lt;= 5</code></li>
+<li><span class="req-check"></span><code>?maxPrice=abc</code> → not a number, return an error message</li>
+<li><span class="req-check"></span><code>?maxPrice=-10</code> → negative number, return an error message</li>
+<li><span class="req-check"></span><code>?category=snacks&amp;maxPrice=3</code> → both params work together</li>
+</ul>
+<div class="http-example">
+<div class="label">Expected behaviour</div>
+<div class="http-row"><span class="http-method">GET</span> <span class="http-url">/?maxPrice=3</span> <span class="http-arrow">→</span> <span class="http-status s200">{ snacks: [ Candy Bar, Popcorn, Chips ], electronics: [] }</span></div>
+<div class="http-row"><span class="http-method">GET</span> <span class="http-url">/?category=snacks&amp;maxPrice=3</span> <span class="http-arrow">→</span> <span class="http-status s200">[ Candy Bar $1.25, Popcorn $1.99, Chips $2.99 ]</span></div>
+<div class="http-row"><span class="http-method">GET</span> <span class="http-url">/?maxPrice=abc</span> <span class="http-arrow">→</span> <span class="http-status s400">{ "error": "..." }</span></div>
+</div>
+<div class="syntax-strip">
+<div class="label">JS helpers — given to you</div>
+<pre><span class="ck">const</span> <span class="cv">raw</span> = <span class="cv">req</span>.<span class="cv">query</span>.<span class="cv">maxPrice</span>;      <span class="cm">// string or undefined</span>
+<span class="ck">const</span> <span class="cv">price</span> = <span class="cf">parseFloat</span>(<span class="cv">raw</span>);       <span class="cm">// converts "3.5" → 3.5, "abc" → NaN</span>
+<span class="cf">isNaN</span>(<span class="cv">price</span>);                         <span class="cm">// true if conversion failed</span>
+
+<span class="cv">items</span>.<span class="cf">filter</span>(<span class="cv">item</span> =&gt; <span class="cv">item</span>.<span class="cv">price</span> &lt;= <span class="cv">price</span>); <span class="cm">// keep only affordable items</span></pre>
+</div>
+<div class="think-box">
+<div class="think-title">🧠 Think before you code</div>
+<p>Before filtering, you need to validate. What are all the ways <code>maxPrice</code> could be bad input?</p>
+<ul>
+<li>What if the user doesn't send it at all?</li>
+<li>What if they send a word like <code>"cheap"</code>?</li>
+<li>What if they send a negative number?</li>
+<li>What if they send <code>0</code>? Should that be allowed or rejected?</li>
+</ul>
+<p>Sketch the decision tree on paper first. Then translate it into <code>if</code> statements.</p>
+</div>
+<p><strong>Steps</strong></p>
+<ol class="steps green">
+<li>Still inside <code>app.get('/', ...)</code> — don't create a new route.</li>
+<li>Read <code>req.query.maxPrice</code>. If it's <code>undefined</code>, skip all filtering.</li>
+<li>Convert it to a number with <code>parseFloat()</code>. If it's <code>NaN</code> or negative, return an error message.</li>
+<li>Apply the filter to whichever item(s) you're about to return — after the <code>category</code> logic from Q5.</li>
+<li>Test in Swagger: try <code>/?maxPrice=5</code>, <code>/?category=snacks&amp;maxPrice=3</code>, and <code>/?maxPrice=abc</code>.</li>
+<li>Run <code>npm test</code>.</li>
+</ol>
+</div>
+</div>
+<!-- ══════════════════════════════════ Q7 ══ -->
+<div class="phase-header">
+<div class="phase-pill pill-solo">★ Do It Yourself</div>
+<div class="phase-pill pill-query">◈ Query Params</div>
+<div class="phase-line"></div>
+<div class="phase-title">Question 7 of 7</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number num-green">07</div>
+<div class="task-title-block">
+<div class="task-route-line">
+<div class="method-pill">GET</div>
+<div class="route-path">/</div>
+</div>
+<div class="task-title">Sort by Price</div>
+<div class="task-subtitle">On your own — add <code>?sort</code> so all three params work together</div>
+</div>
+</div>
+<div class="task-body">
+<p>Still the same <code>GET /</code> handler. Add one more layer — a <code>?sort</code> param so customers can order results by price. By the end of this question, all three params — <code>?category</code>, <code>?maxPrice</code>, and <code>?sort</code> — should work individually and in any combination together.</p>
+<ul class="req-list">
+<li><span class="req-check"></span>No <code>sort</code> param → existing behaviour from Q6 unchanged</li>
+<li><span class="req-check"></span><code>?sort=asc</code> → sort results by price, cheapest first</li>
+<li><span class="req-check"></span><code>?sort=desc</code> → sort results by price, most expensive first</li>
+<li><span class="req-check"></span>Any other value (e.g. <code>?sort=random</code>) → return an error message</li>
+<li><span class="req-check"></span><code>?category=snacks&amp;maxPrice=5&amp;sort=asc</code> → all three params work together</li>
+</ul>
+<div class="http-example">
+<div class="label">Expected behaviour</div>
+<div class="http-row"><span class="http-method">GET</span> <span class="http-url">/?category=snacks&amp;sort=asc</span> <span class="http-arrow">→</span> <span class="http-status s200">[ Candy Bar $1.25, Popcorn $1.99, Chips $2.99, ... ]</span></div>
+<div class="http-row"><span class="http-method">GET</span> <span class="http-url">/?category=snacks&amp;maxPrice=4&amp;sort=desc</span> <span class="http-arrow">→</span> <span class="http-status s200">[ Granola Bar $2.50, Chips $2.99, Popcorn $1.99, ... ]</span></div>
+<div class="http-row"><span class="http-method">GET</span> <span class="http-url">/?sort=random</span> <span class="http-arrow">→</span> <span class="http-status s400">{ "error": "..." }</span></div>
+</div>
+<div class="syntax-strip">
+<div class="label">JS sort syntax — given to you</div>
+<pre><span class="cm">// Ascending (cheapest first):</span>
+<span class="cv">items</span>.<span class="cf">sort</span>((<span class="cv">a</span>, <span class="cv">b</span>) =&gt; <span class="cv">a</span>.<span class="cv">price</span> - <span class="cv">b</span>.<span class="cv">price</span>);
+
+<span class="cm">// Descending (most expensive first):</span>
+<span class="cv">items</span>.<span class="cf">sort</span>((<span class="cv">a</span>, <span class="cv">b</span>) =&gt; <span class="cv">b</span>.<span class="cv">price</span> - <span class="cv">a</span>.<span class="cv">price</span>);
+
+<span class="cm">// ⚠️ .sort() modifies the array in place — sort a copy to be safe:</span>
+<span class="ck">let</span> <span class="cv">result</span> = [...<span class="cv">items</span>];  <span class="cm">// spread creates a shallow copy</span>
+<span class="cv">result</span>.<span class="cf">sort</span>((<span class="cv">a</span>, <span class="cv">b</span>) =&gt; <span class="cv">a</span>.<span class="cv">price</span> - <span class="cv">b</span>.<span class="cv">price</span>);</pre>
+</div>
+<div class="think-box">
+<div class="think-title">🧠 Think before you code</div>
+<p>You now have three params that can all appear at once: <code>?category</code>, <code>?maxPrice</code>, and <code>?sort</code>. <strong>What order should you apply them?</strong></p>
+<p>Try it on paper: take the full snacks + electronics data, apply category first, then maxPrice, then sort. Does it matter if you swap the order? Could sorting before filtering ever give a wrong result?</p>
+<p>Also: <code>.sort()</code> modifies the array in place. If you sort the original <code>snacks</code> array, what happens the next time someone hits <code>GET /</code>? How do you prevent that?</p>
+</div>
+<p><strong>Steps</strong></p>
+<ol class="steps green">
+<li>Still inside <code>app.get('/', ...)</code> — don't create a new route.</li>
+<li>Read <code>req.query.sort</code>. If it was provided but isn't <code>"asc"</code> or <code>"desc"</code>, return an error message.</li>
+<li>Make sure you're working on a copy of the data, not the original array — so the sort doesn't persist between requests.</li>
+<li>Apply <code>category</code> filtering first, then <code>maxPrice</code> filtering, then sorting.</li>
+<li>Test all combinations in Swagger: <code>/?sort=desc</code>, <code>/?category=snacks&amp;sort=asc</code>, <code>/?category=electronics&amp;maxPrice=20&amp;sort=asc</code>, <code>/?sort=random</code>.</li>
+<li>Run <code>npm test</code> — all tests should be green. 🎉</li>
+</ol>
+</div>
+</div>
+<!-- ══════════════════════════════════ WRAP UP ══ -->
+<div class="divider"></div>
+<div class="task-card" style="border-color: var(--green); border-width: 1.5px;">
+<div class="task-header" style="background: var(--green-light);">
+<div style="font-size: 28px; margin-top: 4px; min-width: 36px;">🎉</div>
+<div class="task-title-block">
+<div class="task-title">Store's Open — All Tests Green</div>
+<div class="task-subtitle">Run <code>npm test</code> one final time and screenshot your results</div>
+</div>
+</div>
+<div class="task-body">
+<p>If all your tests pass, Byte &amp; Bite is officially serving customers. A few things to reflect on:</p>
+<ul class="req-list">
+<li><span class="req-check" style="border-color: var(--green);"></span> The snack and electronics routes share almost identical filter-and-sort logic. Could you extract that into a shared helper function to avoid repetition?</li>
+<li><span class="req-check" style="border-color: var(--green);"></span> What happens if someone visits <code>/snacks/abc</code>? Is the response sensible? Should it be handled differently?</li>
+<li><span class="req-check" style="border-color: var(--green);"></span> Open Swagger UI and try to break your own API. Can you find an edge case the tests don't cover?</li>
+</ul>
+</div>
+</div>
+</div>
+<!-- /container -->
+<div class="footer">
+<div>Backend Web Development · <span>Lab 4 — The Shop Is Open</span></div>
+<div><span>npm start</span> &nbsp;·&nbsp; <span>npm test</span> &nbsp;·&nbsp; swagger at <span>localhost:3000/api-docs</span></div>
+</div></body></html>

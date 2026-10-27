@@ -30,12 +30,10 @@ app.get('/hello', function (req, res ) {
 
 app.get('/hello/:name', function (req, res ) {
 
-  let num = req.query.num;
-  if (num) {
-    num = Number(num);
-  } else {
-    num = 1;
-  }
+  const requestedNum = Number(req.query.num);
+
+  // If the query parameter is not a number or is less than or equal to 0, default to 1
+  const num = Number.isFinite(requestedNum) && requestedNum > 0 ? requestedNum : 1;
   console.log(num);
 
   // console.log(req.params.name);

@@ -1,0 +1,33 @@
+{
+  "name": "simple-shopping-server",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node swagger.js && nodemon index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "swagger": "node swagger.js"
+  },
+  "nodemonConfig": {
+    "ignore": ["swagger-output.json"],
+    "events": {
+      "restart": "node swagger.js"
+    }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1",
+    "swagger-autogen": "^2.23.7",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14",
+    "supertest": "^7.2.2",
+    "vitest": "^1.6.0"
+  }
+}

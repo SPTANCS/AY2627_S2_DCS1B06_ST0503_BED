@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The JavaScript Behind Your First Routes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&amp;family=Syne:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/vs2015.min.css">
+    <style>
+        :root {
+            --bg: #F5F2EB;
+            --ink: #1a1a18;
+            --ink2: #4a4a46;
+            --ink3: #8a8a84;
+            --accent: #D45C2A;
+            --border: #D6D0C4;
+            --card: #FDFAF5;
+            --blue-light: #DDE9F7;
+            --blue: #1E5FA8;
+            --yellow-light: #FDF5D4;
+            --yellow: #C69A00;
+            --mono: 'Roboto Mono', monospace;
+            --head: 'Syne', sans-serif;
+            --body: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--ink); font-family: var(--body); line-height: 1.6; }
+        
+        .header { background: #1a1a18; color: #FDFAF5; padding: 3rem; position: relative; overflow: hidden; }
+        .header-meta { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #7a7a74; margin-bottom: 12px; }
+        .header h1 { font-family: var(--head); font-size: 42px; font-weight: 800; line-height: 1.1; margin-bottom: 14px; }
+        .header-sub { font-size: 15px; color: #b0b0a8; max-width: 560px; white-space: pre-wrap; }
+
+        .container { max-width: 860px; margin: 0 auto; padding: 48px; }
+
+        .phase-header { display: flex; align-items: center; gap: 14px; margin: 44px 0 18px; }
+        .phase-pill { font-family: var(--mono); font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 4px 12px; border-radius: 3px; }
+        .pill-guided { background: var(--blue-light); color: var(--blue); }
+        .pill-solo { background: #DFF0E8; color: #2A7D4F; }
+        .pill-query { background: #EEE6F7; color: #6B3FA0; }
+        
+        .phase-line { flex: 1; height: 1px; background: var(--border); }
+        .phase-title { font-family: var(--head); font-size: 13px; font-weight: 700; color: var(--ink3); line-height: 1.5; padding-bottom: 2px; }
+
+        .task-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+        .task-header { display: flex; padding: 22px 28px; border-bottom: 1px solid var(--border); gap: 16px; }
+        .task-number { font-family: var(--head); font-size: 32px; font-weight: 800; color: var(--blue); opacity: 0.3; line-height: 1.2; }
+        .task-title { font-family: var(--head); font-size: 19px; font-weight: 700; line-height: 1.4; padding-bottom: 2px; }
+        .task-subtitle { font-size: 13px; color: var(--ink3); line-height: 1.4; white-space: pre-wrap; }
+        .task-body { padding: 22px 28px; }
+        .task-body p { font-size: 14px; color: var(--ink2); margin-bottom: 14px; }
+        .task-body ul, .task-body p ul { padding-left: 32px !important; margin-bottom: 16px; list-style-type: disc !important; }
+        .task-body ol, .task-body p ol { padding-left: 32px !important; margin-bottom: 16px; list-style-type: decimal !important; }
+        .task-body li { margin-bottom: 8px; font-size: 14px; color: var(--ink2); display: list-item !important; }
+
+        /* ASCII Block */
+        .ascii-container { margin: 24px 0; text-align: center; }
+        .ascii-art { font-family: var(--mono); font-size: 12px; line-height: 1.5; background: var(--bg); color: var(--ink); padding: 20px; border-radius: 8px; border: 1px solid var(--border); overflow-x: auto; text-align: left; white-space: pre; margin: 0; }
+        .ascii-caption { margin-top: 12px; font-size: 13.5px; color: var(--ink3); font-style: italic; }
+
+        .page-break { display: flex; justify-content: center; padding: 2rem 0; margin-top: 2rem; }
+        .continue-btn { background: var(--accent); color: white; border: none; padding: 0.75rem 2rem; border-radius: 2rem; font-family: var(--head); font-weight: 700; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 14px rgba(212,92,42,0.3); transition: all 0.2s; }
+        .continue-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(212,92,42,0.4); }
+
+        .quiz-container { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 24px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .quiz-question-block + .quiz-question-block { margin-top: 20px; padding-top: 18px; border-top: 1px dashed var(--border); }
+        .quiz-question { font-family: var(--head); font-weight: 700; font-size: 17px; margin-bottom: 20px; color: var(--ink); }
+        .quiz-options { display: flex; flex-direction: column; gap: 12px; }
+        .quiz-opt { display: block; width: 100%; box-sizing: border-box; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; text-align: left; font-family: var(--body); font-size: 15px; line-height: 1.5; cursor: pointer; transition: all 0.2s; }
+        .quiz-opt:hover { background: #f3f4f6; border-color: #d1d5db; }
+        .quiz-opt.selected { border-color: var(--ink); background: #f3f4f6; font-weight: 600; }
+        .quiz-opt.correct { background: #ecfdf5 !important; border-color: #10b981 !important; color: #065f46 !important; }
+        .quiz-opt.incorrect { background: #fef2f2 !important; border-color: #ef4444 !important; color: #991b1b !important; }
+        .quiz-opt p, .quiz-opt ul, .quiz-opt ol { margin-top: 0; margin-bottom: 0; }
+        .quiz-opt p + p, .quiz-opt p + ul, .quiz-opt p + ol, .quiz-opt ul + p, .quiz-opt ol + p { margin-top: 8px; }
+        .quiz-question code, .quiz-opt code { font-family: var(--mono); background: #eceae4; padding: 1px 5px; border-radius: 3px; font-size: 0.85em; display: inline; vertical-align: baseline; }
+        .quiz-feedback { margin-top: 24px; font-size: 14.5px; line-height: 1.5; }
+        .feedback-correct { background: #d1fae5; color: #065f46; padding: 16px; border-radius: 8px; }
+        .feedback-incorrect { background: #fee2e2; color: #991b1b; padding: 16px; border-radius: 8px; }
+
+        .accordion-list { margin: 24px 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+        .accordion-item { border-bottom: 1px solid var(--border); }
+        .accordion-item:last-child { border-bottom: none; }
+        .accordion-header { width: 100%; padding: 16px 20px; display: flex; align-items: center; gap: 12px; background: white; border: none; text-align: left; font-family: var(--head); font-weight: 700; font-size: 15px; cursor: pointer; color: var(--ink); }
+        .accordion-toggle-icon { color: var(--accent); font-family: var(--mono); font-size: 18px; width: 16px; }
+        .accordion-content { padding: 16px 20px 24px; background: #fafafa; font-size: 15px; line-height: 1.6; color: var(--ink2); border-top: 1px solid #f3f4f6; }
+
+        .comparison-table-wrapper { margin: 24px 0; overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
+        .comparison-table { width: 100%; border-collapse: collapse; background: white; }
+        .comparison-table th { background: #f8f9fa; padding: 16px; text-align: left; font-family: var(--head); font-size: 14px; color: var(--ink3); border-bottom: 1px solid var(--border); }
+        .comparison-table td { padding: 16px; font-size: 14px; line-height: 1.5; border-bottom: 1px solid #f3f4f6; width: 50%; }
+        .comparison-table tr td:first-child { border-right: 1px solid #f3f4f6; font-weight: 600; }
+
+        .syntax-strip { background: #1e1e1e; border-radius: 8px; padding: 0; margin: 14px 0; color: #d4d4d4; font-family: var(--mono); font-size: 12.5px; overflow: hidden; position: relative; }
+        .syntax-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 16px 0; }
+        .code-filename { font-family: var(--mono); font-size: 10px; color: #9cdcfe; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .syntax-lang { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: #6a9955; margin-left: auto; }
+        .syntax-strip pre { margin: 0; padding: 12px 16px 16px; overflow-x: auto; }
+        .syntax-strip pre code { background: none !important; padding: 0 !important; color: inherit; font-size: 12.5px; line-height: 1.8; }
+        .syntax-strip .hljs { background: transparent !important; padding: 0 !important; }
+        .hint-box { display: flex; gap: 12px; padding: 13px 16px; border-radius: 8px; margin: 12px 0; border-left: 3px solid; }
+        .hint-box.blue { background: var(--blue-light); border-color: var(--blue); }
+        .hint-box.yellow { background: var(--yellow-light); border-color: var(--yellow); }
+        .hint-box p { font-size: 13px; margin: 0; }
+
+        .steps-container { display: flex; flex-direction: column; gap: 16px; margin: 24px 0; }
+        .step-item { display: flex; gap: 16px; align-items: flex-start; }
+        .step-badge { font-family: var(--mono); font-size: 11px; width: 26px; height: 26px; background: var(--blue-light); color: var(--blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 700; }
+        .step-content { flex: 1; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+
+        code { font-family: var(--mono); background: #ECEAE4; padding: 1px 5px; border-radius: 3px; font-size: 12.5px; display: inline; }
+        .method-pill { font-family: var(--mono); font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 4px; background: #E6EDFA; color: var(--blue); }
+
+        .hidden { display: none !important; }
+        .section-wrapper.hidden { display: none; }
+
+        /* Navigation Sidebar */
+        .nav-toggle { position: fixed; top: 50%; left: 0; transform: translateY(-50%); z-index: 1000; background: var(--accent); color: white; border: none; width: 48px; height: 56px; border-radius: 0 12px 12px 0; font-size: 22px; cursor: pointer; box-shadow: 4px 0 16px rgba(212,92,42,0.45); display: flex; align-items: center; justify-content: center; transition: width 0.2s, box-shadow 0.2s; }
+        .nav-toggle:hover { width: 56px; box-shadow: 6px 0 20px rgba(212,92,42,0.6); }
+        .nav-sidebar { position: fixed; top: 0; left: -320px; width: 300px; height: 100vh; background: white; border-right: 1px solid var(--border); z-index: 999; transition: left 0.3s ease; overflow-y: auto; padding: 24px 20px 20px; box-shadow: 4px 0 20px rgba(0,0,0,0.1); }
+        .nav-sidebar.open { left: 0; }
+        .nav-sidebar h3 { font-family: var(--head); font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink3); margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+        .nav-link { display: flex; align-items: center; padding: 10px 14px; margin-bottom: 4px; border-radius: 6px; font-family: var(--body); font-size: 13px; color: var(--ink2); text-decoration: none; cursor: pointer; border: none; background: none; width: 100%; text-align: left; transition: all 0.15s; }
+        .nav-link:hover { background: var(--bg); color: var(--ink); }
+        .nav-link.active { background: #fde8dc; color: var(--accent); font-weight: 600; border-left: 3px solid var(--accent); }
+        .nav-link .nav-num { font-family: var(--mono); font-size: 10px; color: var(--ink3); margin-right: 10px; flex-shrink: 0; }
+    </style>
+</head><body><p><button class="nav-toggle" id="navToggle">☰</button></p>
+<div class="nav-sidebar" id="navSidebar">
+<h3>Sections</h3>
+<button class="nav-link" data-target="0"><span class="nav-num">01</span>Your First Routes</button><button class="nav-link" data-target="1"><span class="nav-num">02</span>function and Arrow Functions</button><button class="nav-link" data-target="2"><span class="nav-num">03</span>Functions as Arguments</button><button class="nav-link" data-target="3"><span class="nav-num">04</span>Check: Functions</button><button class="nav-link" data-target="4"><span class="nav-num">05</span>Block Scope</button><button class="nav-link" data-target="5"><span class="nav-num">06</span>Function Scope</button><button class="nav-link" data-target="6"><span class="nav-num">07</span>Check: Scope</button><button class="nav-link" data-target="7"><span class="nav-num">08</span>for...of</button><button class="nav-link" data-target="8"><span class="nav-num">09</span>Check: for...of</button><button class="nav-link" data-target="9"><span class="nav-num">10</span>Your First Routes, Explained</button></div>
+<div class="header">
+<div class="header-meta">homework</div>
+<h1>The JavaScript Behind Your First Routes</h1>
+<p class="header-sub">You have built a server and written your first <span class="method-pill">GET</span> routes. This lesson explains three pieces of syntax you have been typing without an explanation.</p>
+</div>
+<div class="container">
+<div class="section-wrapper" id="section-0">
+<div class="phase-header">
+<div class="phase-pill pill-guided">📖 Concept</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 1 of 10</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">01</div>
+<div class="task-title-block">
+<div class="task-title">Your First Routes</div>
+<div class="task-subtitle">Three questions you cannot answer yet</div>
+</div>
+</div>
+<div class="task-body">
+<p>This week you built a server and it worked.</p>
+<p>It also means you spent days typing characters that did something without meaning much to you yet. This lesson closes that gap. Most of what follows is already sitting in the code on your screen.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">app.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">app.get("/users", (req, res) =&gt; {
+  res.json(users);
+});</code></pre>
+</div>
+<p>Three questions you may have had as you kept writing code like the above.</p>
+<div class="steps-container">
+<div class="step-item">
+<div class="step-badge">1</div>
+<div class="step-content">What is <code>(req, res) =&gt; { ... }</code>? Not what does it do, but what kind of thing is it?</div>
+</div>
+<div class="step-item">
+<div class="step-badge">2</div>
+<div class="step-content">Who calls it? You never wrote a line of code that calls that function.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">3</div>
+<div class="step-content">Where does <code>users</code> live, and who else can see it?</div>
+</div>
+</div>
+<p>All three are about code you have already written, and this lesson answers them.</p>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-1">
+<div class="phase-header">
+<div class="phase-pill pill-guided">✦ Code-along</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 2 of 10</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">02</div>
+<div class="task-title-block">
+<div class="task-title">function and Arrow Functions</div>
+<div class="task-subtitle">We write functions so we do not repeat ourselves. Folder 01.</div>
+</div>
+</div>
+<div class="task-body">
+<p>Let's start with a problem rather than with syntax.</p>
+<p>Here is a price list with 9% tax added to each item. Open <code>01-functions</code> and run <code>node index.js</code> in your terminal.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">01-functions/index.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">console.log(3 * 1.09);   // tax on a $3 item
+console.log(7 * 1.09);   // tax on a $7 item
+console.log(12 * 1.09);  // tax on a $12 item</code></pre>
+</div>
+<p>The rule for adding tax is written out three times.</p>
+<p>If the rate changes, you have to find and fix three lines, and if you miss one you get a bug that looks like a rounding error.</p>
+<p>A function lets you write the rule once and use it by name.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">01-functions/index.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">function withTax(price) {
+  return price * 1.09;
+}
+
+console.log(withTax(3));
+console.log(withTax(7));
+console.log(withTax(12));</code></pre>
+</div>
+<p>That is the whole reason functions exist. One place to write a rule, one place to change it, and a name that says what it does.</p>
+<p>There is a second way to write the same function, and it is the one you have been typing in your routes all week.</p>
+<p>Run <code>node index.js</code> in your terminal again and compare the two lines of output.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">01-functions/index.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">function withTaxA(price) {
+  return price * 1.09;
+}
+
+const withTaxB = (price) =&gt; {
+  return price * 1.09;
+};
+
+console.log(withTaxA(10));
+console.log(withTaxB(10));</code></pre>
+</div>
+<p>The output is identical.</p>
+<p>These are not two different features. They are two ways of spelling the same thing, and either one can be translated into the other.</p>
+<p>The arrow version is the one to slow down on. A function sitting on the right hand side of an <code>=</code> shows that a function is a <u>value</u>.</p>
+<p>It can be stored in a variable, put in an array, or handed to something else.</p>
+<div class="hint-box blue"><span class="hint-icon">💡</span>
+<p>Both forms need <code>return</code>. A function body inside braces gives back nothing unless you say so.</p>
+</div>
+<div class="hint-box blue"><span class="hint-icon">💡</span>
+<p>Tutorials online often use a shorter arrow form that drops the braces and the <code>return</code>. We use the braces form in this module because it matches the <code>(req, res) =&gt; { ... }</code> in your routes. If you meet the short form elsewhere, it does the same job.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-2">
+<div class="phase-header">
+<div class="phase-pill pill-guided">✦ Code-along</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 3 of 10</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">03</div>
+<div class="task-title-block">
+<div class="task-title">Functions as Arguments</div>
+<div class="task-subtitle">A function is a value you can hand to something else. Folder 01. This answers question 2.</div>
+</div>
+</div>
+<div class="task-body">
+<p>If a function is a value, it can be an argument.</p>
+<p>Run <code>node index.js</code> in your terminal. Then answer one thing before reading on: who called the arrow function? You never wrote a line that calls it.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">01-functions/index.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">const twice = (task) =&gt; {
+  task();
+  task();
+};
+
+twice(() =&gt; {
+  console.log("hello");
+});</code></pre>
+</div>
+<p><code>twice</code> takes a function as its argument and calls it two times. You wrote the arrow function, but <code>twice</code> decided when to run it and how often.</p>
+<p>Nothing magic is happening here. <code>task</code> is an ordinary parameter that happens to hold a function, and <code>task()</code> is how you call it.</p>
+<p>JavaScript itself works the same way. <code>setTimeout</code> takes a function and a number of milliseconds, and calls your function after that time has passed.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">01-functions/index.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">setTimeout(() =&gt; {
+  console.log("one second later");
+}, 1000);</code></pre>
+</div>
+<p>Your route is the same shape a third time.</p>
+<p><code>app.get("/users", handler)</code> hands your function over. You never call it. The server calls it, <u>once per request</u>, and passes in <code>req</code> and <code>res</code> when it does.</p>
+<div class="ascii-container">
+<pre class="ascii-art">YOU WRITE THE FUNCTION                SOMETHING ELSE CALLS IT
+----------------------                -----------------------
+
+  (req, res) =&gt; {                       a request arrives
+    res.json(users);                            |
+  }                                             v
+                                        handler(req, res)
+         |                                      |
+         | handed over as                       v
+         | an argument                    your code runs
+         v                                      |
+  app.get("/users", handler)                    v
+                                        ...and again, next request</pre>
+<p class="ascii-caption">You supply the function. The caller decides when and how often to run it.</p>
+</div>
+<p>Most of what you write in server code is not code that runs now. It is code you hand to something else to run later.</p>
+<div class="hint-box yellow"><span class="hint-icon">⚠️</span>
+<p>Watch the parentheses when you pass a function by name. <code>app.get("/users", listUsers)</code> hands the function over. <code>app.get("/users", listUsers())</code> calls it immediately and hands over whatever it returned, which is almost never what you want.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-3">
+<div class="phase-header">
+<div class="phase-pill pill-guided">❓ Check Your Understanding</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 4 of 10</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">04</div>
+<div class="task-title-block">
+<div class="task-title">Check: Functions</div>
+<div class="task-subtitle"></div>
+</div>
+</div>
+<div class="task-body">
+<div class="quiz-container" id="quiz-ca8c455a-8027-4a78-a168-0a5e2b448c90">
+<div class="quiz-question-block" data-question-index="0">
+<div class="quiz-question">Q1. Which of these returns <code>undefined</code> when you call it?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0"><code>function f(n) { return n * 2; }</code></div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="true" tabindex="0"><code>const f = (n) =&gt; { n * 2; };</code></div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0"><code>const f = (n) =&gt; { return n * 2; };</code></div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Correct. It calculates <code>n * 2</code> and throws the answer away, because there is no <code>return</code>. Nothing crashes. It quietly gives back <code>undefined</code>.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>Look for the one with no <code>return</code> inside the braces. A function body gives back nothing unless you write <code>return</code>, whichever way the function was spelled.</div>
+</div>
+</div>
+</div>
+<div class="quiz-question-block" data-question-index="1">
+<div class="quiz-question">Q2. In <code>app.get("/users", (req, res) =&gt; { ... })</code>, what kind of thing is <code>(req, res) =&gt; { ... }</code>?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="1" data-correct="false" tabindex="0">Special server syntax that only works inside a route</div>
+<div class="quiz-opt" role="button" data-question-index="1" data-correct="true" tabindex="0">A function passed as an argument, like any other value</div>
+<div class="quiz-opt" role="button" data-question-index="1" data-correct="false" tabindex="0">A call to a function named <code>req</code></div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Right. It is an ordinary function used as a value, the same move as passing a function to <code>twice</code> or to <code>setTimeout</code>. The server stores it and calls it later, once per request.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>It is not special syntax. It is an ordinary function handed over as an argument, exactly like the one you passed to <code>twice</code> and to <code>setTimeout</code>. Nothing about it is server specific.</div>
+</div>
+</div>
+</div>
+<div class="quiz-question-block" data-question-index="2">
+<div class="quiz-question">Q3. How many arguments are you passing in <code>setTimeout(() =&gt; { console.log("hi"); }, 1000)</code>?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="2" data-correct="false" tabindex="0">One: a line of code to run later</div>
+<div class="quiz-opt" role="button" data-question-index="2" data-correct="true" tabindex="0">Two: a function, and a number of milliseconds</div>
+<div class="quiz-opt" role="button" data-question-index="2" data-correct="false" tabindex="0">Three: an arrow, a <code>console.log</code>, and a number</div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Correct. The first argument is a function that has not been called yet. <code>setTimeout</code> holds onto it and calls it after 1000 milliseconds.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>Count the commas at the top level. Everything from <code>()</code> to the closing brace is one arrow function, and that is argument one. <code>1000</code> is argument two.</div>
+</div>
+</div>
+</div>
+<div class="quiz-question-block" data-question-index="3">
+<div class="quiz-question">Q4. What is the difference between <code>app.get("/users", listUsers)</code> and <code>app.get("/users", listUsers())</code>?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="3" data-correct="false" tabindex="0">Nothing, the parentheses are optional</div>
+<div class="quiz-opt" role="button" data-question-index="3" data-correct="true" tabindex="0">The first hands the function over; the second calls it now and hands over its result</div>
+<div class="quiz-opt" role="button" data-question-index="3" data-correct="false" tabindex="0">The second is the correct way to register a route</div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Correct. Parentheses mean call it now. Without them you are passing the function itself, which is what the server needs so it can call it per request.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>Parentheses are how you call a function. With them, the function runs immediately and its return value gets passed along instead. Without them, the function itself is passed.</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-4">
+<div class="phase-header">
+<div class="phase-pill pill-guided">✦ Code-along</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 5 of 10</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">05</div>
+<div class="task-title-block">
+<div class="task-title">Block Scope</div>
+<div class="task-subtitle">A variable only exists inside its braces. Folder 02. This answers question 3.</div>
+</div>
+</div>
+<div class="task-body">
+<p>Open <code>02-scope</code>. Before you run <code>node index.js</code> in your terminal, write down what you think the last line prints.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">02-scope/index.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">const isLoggedIn = true;
+
+if (isLoggedIn) {
+  const greeting = "welcome back";
+}
+
+console.log(greeting);</code></pre>
+</div>
+<p>Read the error message closely. It says <code>ReferenceError: greeting is not defined</code>.</p>
+<p>Notice the exact claim. Not that <code>greeting</code> is empty, or unset, or <code>undefined</code>. That it <u>does not exist</u>.</p>
+<p>A pair of braces makes a <u>wall</u>. A variable declared with <code>const</code> or <code>let</code> inside <code>{ }</code> exists until the closing brace, and then it is gone.</p>
+<p>This applies to every pair of braces: an <code>if</code>, a loop, a function body, including the body of your route handler.</p>
+<div class="ascii-container">
+<pre class="ascii-art">+-- your file (module scope) ------------------------+
+|                                                    |
+|  const users = [];                                 |
+|      ... one of these, ever. shared by everybody.  |
+|                                                    |
+|  +-- handler runs for request #1 ---------------+  |
+|  |   const count = users.length;                |  |
+|  |       ... created now, gone when this ends   |  |
+|  +----------------------------------------------+  |
+|                                                    |
+|  +-- handler runs for request #2 ---------------+  |
+|  |   const count = users.length;                |  |
+|  |       ... a different one, unrelated to #1   |  |
+|  +----------------------------------------------+  |
+|                                                    |
++----------------------------------------------------+</pre>
+<p class="ascii-caption">Where a variable is declared decides who can see it and how long it lives</p>
+</div>
+<p>That diagram answers question 3.</p>
+<p>A variable declared inside your route handler is created fresh for every request and is <u>private</u> to it.</p>
+<p>A variable declared at the top of the file is created once and <u>shared</u> by every request, from every user, for as long as the server runs.</p>
+<div class="hint-box blue"><span class="hint-icon">💡</span>
+<p>The rule for this module: use <code>const</code> by default, <code>let</code> only when you need to reassign, and never <code>var</code>. <code>var</code> does not respect the wall in the diagram above.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-5">
+<div class="phase-header">
+<div class="phase-pill pill-guided">✦ Code-along</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 6 of 10</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">06</div>
+<div class="task-title-block">
+<div class="task-title">Function Scope</div>
+<div class="task-subtitle">Every call gets its own variables. Folder 02.</div>
+</div>
+</div>
+<div class="task-body">
+<p>The same function is called twice with different arguments.</p>
+<p>Before you run <code>node index.js</code> in your terminal, decide whether the first call leaves anything behind that affects the second.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">02-scope/index.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">const makeGreeting = (name) =&gt; {
+  const message = "hello " + name;
+  return message;
+};
+
+console.log(makeGreeting("Ana"));
+console.log(makeGreeting("Ben"));</code></pre>
+</div>
+<p>Each call gets its <u>own private set</u> of variables. <code>message</code> is created when the call starts and destroyed when it ends, and the second call knows nothing about the first.</p>
+<p>Parameters work the same way. <code>name</code> is not one variable that gets overwritten. It is a fresh one per call.</p>
+<p>Now run <code>node index.js</code> in your terminal again for the second part. There are two variables called <code>message</code>, one inside the function and one outside.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">02-scope/index.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">const message = "I am the outer one";
+
+const shadowDemo = () =&gt; {
+  const message = "I am the inner one";
+  return message;
+};
+
+console.log(shadowDemo());
+console.log(message);</code></pre>
+</div>
+<p>This is called <u>shadowing</u>. An inner variable with the same name as an outer one hides the outer one for the length of that block.</p>
+<p>The outer <code>message</code> is untouched, and you can see it print unchanged on the last line.</p>
+<div class="hint-box blue"><span class="hint-icon">💡</span>
+<p>This is why two people can hit your <code>/users</code> route at the same moment without their data getting mixed up. Each request runs the handler again, and each run gets its own <code>req</code>, its own <code>res</code>, and its own locals. Anything declared at the top of the file is still shared between them.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-6">
+<div class="phase-header">
+<div class="phase-pill pill-guided">❓ Check Your Understanding</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 7 of 10</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">07</div>
+<div class="task-title-block">
+<div class="task-title">Check: Scope</div>
+<div class="task-subtitle"></div>
+</div>
+</div>
+<div class="task-body">
+<div class="quiz-container" id="quiz-d63389f0-e844-4b62-86fa-a0880c883e06">
+<div class="quiz-question-block" data-question-index="0">
+<div class="quiz-question">Q1. A variable is declared with <code>let</code> inside an <code>if</code> block and read after the closing brace. What happens?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">It prints <code>undefined</code></div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">It prints the value it was given inside the block</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="true" tabindex="0">It throws a <code>ReferenceError</code></div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Right. The braces are a wall. Once the block ends the variable does not exist at all, so JavaScript reports it as not defined rather than as empty.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>There is a real difference between empty and non-existent. The variable is not <code>undefined</code>. It is gone entirely, which is why you get a <code>ReferenceError</code>.</div>
+</div>
+</div>
+</div>
+<div class="quiz-question-block" data-question-index="1">
+<div class="quiz-question">Q2. A function declares <code>const total = 0;</code> inside its body. You call that function three times. How many <code>total</code> variables were created?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="1" data-correct="false" tabindex="0">One, shared by all three calls</div>
+<div class="quiz-opt" role="button" data-question-index="1" data-correct="true" tabindex="0">Three, one per call, each destroyed when its call ends</div>
+<div class="quiz-opt" role="button" data-question-index="1" data-correct="false" tabindex="0">One, which keeps its value between calls</div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Correct. Every call builds its own set of locals and throws them away when it finishes, which is why calls cannot interfere with each other.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>Variables inside a function body are created when the call starts and destroyed when it ends. Nothing survives between calls, so three calls means three separate <code>total</code> variables.</div>
+</div>
+</div>
+</div>
+<div class="quiz-question-block" data-question-index="2">
+<div class="quiz-question">Q3. In your server file, <code>const users = [];</code> sits at the top and a <code><span class="method-pill">GET</span></code> route reads it. Who can see that array?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="2" data-correct="false" tabindex="0">Only the request that is running right now</div>
+<div class="quiz-opt" role="button" data-question-index="2" data-correct="true" tabindex="0">Every request, from every user, for as long as the server runs</div>
+<div class="quiz-opt" role="button" data-question-index="2" data-correct="false" tabindex="0">Nobody, because it is recreated for each request</div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Correct. State at the top of the file is shared by everyone. That is useful when you want it and a serious bug when you do not.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>Look at where it is declared. It sits at the top of the file, outside every function, so it is created once when the server starts. Only variables declared inside the handler are fresh per request.</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-7">
+<div class="phase-header">
+<div class="phase-pill pill-guided">✦ Code-along</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 8 of 10</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">08</div>
+<div class="task-title-block">
+<div class="task-title">for...of</div>
+<div class="task-subtitle">A different style of loop, same reasoning. Folder 03.</div>
+</div>
+</div>
+<div class="task-body">
+<p>Open <code>03-for-of</code> and run <code>node index.js</code> in your terminal. Two loops, printing the same thing.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">03-for-of/index.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">const fruits = ["apple", "banana", "cherry"];
+
+for (let i = 0; i &lt; fruits.length; i = i + 1) {
+  console.log(fruits[i]);
+}
+
+for (const fruit of fruits) {
+  console.log(fruit);
+}</code></pre>
+</div>
+<p>Same output, same reasoning. Both loops walk the array from start to finish.</p>
+<p>The difference is what you hold on each pass. The first gives you the <u>position</u>, so you look the item up yourself. The second gives you the <u>item</u> directly.</p>
+<p>One question the syntax raises: why is <code>const</code> allowed when <code>fruit</code> is different every time round? Because it is never reassigned. Each pass creates a brand new <code>fruit</code>, uses it, and throws it away.</p>
+<div class="hint-box blue"><span class="hint-icon">💡</span>
+<p>In this module you may use either one. We will stick to <code>for (const item of ...)</code> because it is much easier to read.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-8">
+<div class="phase-header">
+<div class="phase-pill pill-guided">❓ Check Your Understanding</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 9 of 10</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">09</div>
+<div class="task-title-block">
+<div class="task-title">Check: for...of</div>
+<div class="task-subtitle"></div>
+</div>
+</div>
+<div class="task-body">
+<div class="quiz-container" id="quiz-57ae64fd-b97f-4aa5-90c5-0593c8dba681">
+<div class="quiz-question-block" data-question-index="0">
+<div class="quiz-question">Q1. In <code>for (const fruit of ["apple", "banana"])</code>, what does <code>fruit</code> hold on the first pass?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">The number <code>0</code></div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="true" tabindex="0">The string <code>"apple"</code></div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">The whole array</div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Correct. <code>for...of</code> hands you the item itself, so there is no index to look up.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>That is what the counter-style loop gives you. <code>for...of</code> skips the position and hands you the item directly, so the first pass holds the first item.</div>
+</div>
+</div>
+</div>
+<div class="quiz-question-block" data-question-index="1">
+<div class="quiz-question">Q2. Why is <code>const</code> allowed in <code>for (const item of items)</code>, when <code>item</code> is different each time round?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="1" data-correct="true" tabindex="0">Each pass creates a brand new binding, so nothing is ever reassigned</div>
+<div class="quiz-opt" role="button" data-question-index="1" data-correct="false" tabindex="0"><code>const</code> is ignored inside loop headers</div>
+<div class="quiz-opt" role="button" data-question-index="1" data-correct="false" tabindex="0">It is a special exception built into <code>for...of</code></div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Right. There is no exception here. A fresh <code>item</code> is created for each pass and thrown away at the end of it.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>Nothing is being ignored and there is no exception. A new binding is created at the start of each pass, used, and discarded. Reassignment never happens, so <code>const</code> is accurate.</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-9">
+<div class="phase-header">
+<div class="phase-pill pill-guided">📖 Concept</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 10 of 10</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">10</div>
+<div class="task-title-block">
+<div class="task-title">Your First Routes, Explained</div>
+<div class="task-subtitle">The three questions, answered</div>
+</div>
+</div>
+<div class="task-body">
+<p>Here is the code from the start of the lesson. Try to answer all three questions yourself before opening the answers.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">app.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">app.get("/users", (req, res) =&gt; {
+  res.json(users);
+});</code></pre>
+</div>
+<div class="accordion-list">
+<div class="accordion-item"><button class="accordion-header"><span class="accordion-toggle-icon">+</span>1. What is (req, res) =&gt; { ... }?</button>
+<div class="accordion-content hidden">An ordinary function used as a <u>value</u>. It is the same thing you passed to <code>twice</code> and to <code>setTimeout</code>, spelled the same way. Nothing about the syntax is server specific. You could store it in a <code>const</code> and pass that instead, and the route would work identically.</div>
+</div>
+<div class="accordion-item"><button class="accordion-header"><span class="accordion-toggle-icon">+</span>2. Who calls it?</button>
+<div class="accordion-content hidden">The server does, <u>once per request</u>, passing in <code>req</code> and <code>res</code> when it does. You handed the function over as an argument and gave up control of when it runs, which is why you never wrote a line that calls it.</div>
+</div>
+<div class="accordion-item"><button class="accordion-header"><span class="accordion-toggle-icon">+</span>3. Where does users live, and who can see it?</button>
+<div class="accordion-content hidden">At the top of the file, outside every function, which means <u>module scope</u>. It is created once when the server starts and shared by every request from every user, for as long as the server is running. Anything you declare inside the handler instead is private to a single request.</div>
+</div>
+</div>
+<p>Three lines, three concepts, and none of them are really about servers. Most of what looked mysterious about your route this week was ordinary JavaScript that had not been explained yet.</p>
+</div>
+</div>
+</div>
+</div>
+<p>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+</p>
+<p><script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const wrappers = document.querySelectorAll('.section-wrapper');
+            const navLinks = document.querySelectorAll('.nav-link');
+            const navToggle = document.getElementById('navToggle');
+            const navSidebar = document.getElementById('navSidebar');
+
+            // Toggle nav sidebar
+            navToggle.addEventListener('click', () => {
+                navSidebar.classList.toggle('open');
+                navToggle.textContent = navSidebar.classList.contains('open') ? '✕' : '☰';
+                navToggle.style.left = navSidebar.classList.contains('open') ? '300px' : '0';
+                navToggle.style.borderRadius = navSidebar.classList.contains('open') ? '0 12px 12px 0' : '0 12px 12px 0';
+            });
+
+            // Initial hide: find first page_break and hide everything after it
+            let foundBreak = false;
+            wrappers.forEach((wrapper) => {
+                if (foundBreak) {
+                    wrapper.classList.add('hidden');
+                } else if (wrapper.querySelector('.continue-btn')) {
+                    foundBreak = true;
+                }
+            });
+
+            // Continue button logic
+            document.querySelectorAll('.continue-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const currentWrapper = e.target.closest('.section-wrapper');
+                    const currentIndex = parseInt(currentWrapper.id.split('-')[1]);
+                    e.target.parentElement.style.display = 'none';
+
+                    let nextIndex = currentIndex + 1;
+                    while (nextIndex < wrappers.length) {
+                        wrappers[nextIndex].classList.remove('hidden');
+                        if (wrappers[nextIndex].querySelector('.continue-btn')) break;
+                        nextIndex++;
+                    }
+                    if (wrappers[currentIndex + 1]) wrappers[currentIndex + 1].scrollIntoView({ behavior: 'smooth' });
+                });
+            });
+
+            // Nav jump: reveal all sections up to and including target
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    const targetIdx = parseInt(link.getAttribute('data-target'));
+                    // Unhide all sections up to target
+                    for (let i = 0; i <= targetIdx; i++) {
+                        wrappers[i].classList.remove('hidden');
+                        // Hide continue buttons for sections we're skipping past
+                        if (i < targetIdx) {
+                            const pb = wrappers[i].querySelector('.page-break');
+                            if (pb) pb.style.display = 'none';
+                        }
+                    }
+                    // Scroll to target
+                    wrappers[targetIdx].scrollIntoView({ behavior: 'smooth' });
+                    // Close sidebar
+                    navSidebar.classList.remove('open');
+                    navToggle.textContent = '☰';
+                    navToggle.style.left = '0';
+                    // Highlight active
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+                });
+            });
+
+            // Quiz Logic (per question block)
+            document.querySelectorAll('.quiz-question-block').forEach(questionBlock => {
+                const opts = questionBlock.querySelectorAll('.quiz-opt');
+                const feedback = questionBlock.querySelector('.quiz-feedback');
+
+                opts.forEach(opt => {
+                    const answerQuestion = () => {
+                        if (questionBlock.classList.contains('answered')) return;
+                        questionBlock.classList.add('answered');
+                        opt.classList.add('selected');
+                        const isCorrect = opt.getAttribute('data-correct') === 'true';
+
+                        if (isCorrect) {
+                            opt.classList.add('correct');
+                            feedback.querySelector('.feedback-correct').classList.remove('hidden');
+                        } else {
+                            opt.classList.add('incorrect');
+                            feedback.querySelector('.feedback-incorrect').classList.remove('hidden');
+                            const correctOpt = questionBlock.querySelector('.quiz-opt[data-correct="true"]');
+                            if (correctOpt) correctOpt.classList.add('correct');
+                        }
+
+                        feedback.classList.remove('hidden');
+                    };
+
+                    opt.addEventListener('click', answerQuestion);
+                    opt.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            answerQuestion();
+                        }
+                    });
+                });
+            });
+
+            // Accordion Logic
+            document.querySelectorAll('.accordion-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const content = header.nextElementSibling;
+                    const icon = header.querySelector('.accordion-toggle-icon');
+                    const isHidden = content.classList.contains('hidden');
+                    content.classList.toggle('hidden');
+                    icon.textContent = isHidden ? '−' : '+';
+                });
+            });
+        });
+
+        // Highlight.js
+        document.querySelectorAll('.syntax-strip pre code').forEach(el => {
+            hljs.highlightElement(el);
+        });
+    </script></p>
+<p>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon="{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;b856efea05a540eb867e568e2588268c&quot;,&quot;r&quot;:1}" crossorigin="anonymous"></script>
+</p></body></html>

@@ -50,12 +50,14 @@ const electronics = [
 //   When both are provided, filter first then sort
 app.get('/snacks', (req, res) => {
   // TODO: Implement this route
+  res.json(snacks);
 });
 
 // GET /electronics - return all electronics as JSON
 // Same query param support as /snacks
 app.get('/electronics', (req, res) => {
   // TODO: Implement this route
+  res.json(electronics);
 });
 
 // GET /snacks/:id - return a single snack by ID
@@ -66,12 +68,45 @@ app.get('/snacks/:id', (req, res) => {
   // Hint: use req.params.id to get the ID from the URL
   // Hint: use Number() to convert the string ID to a number
   // Hint: use .find() to search the snacks array
+
+  const snackID = Number(req.params.id);
+  console.log(`the snack id is ${snackID}`);
+
+  // let resultSnack = undefined;
+  // for (let i = 0; i < snacks.length; i++) {
+  //   if (snacks[i].id == snackID) {
+  //     resultSnack = snacks[i];
+  //     break;
+  //   }
+  // }
+
+  let resultSnack = snacks.find(element => element.id == snackID);
+  
+  if (resultSnack) {
+    res.json(resultSnack);
+  } else {
+    res.json({error: "item not found"});
+  }
 });
 
 // GET /electronics/:id - return a single electronic by ID
 // Same behavior as /snacks/:id but searches the electronics array
 app.get('/electronics/:id', (req, res) => {
   // TODO: Implement this route
+
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number
+  let electronicsID = Number(req.params.id);
+
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/find
+  const foundItem = electronics.find(
+    (currentItem) => currentItem.id === electronicsID,
+  );
+
+  if (foundItem) {
+    res.json(foundItem);
+  } else {
+    res.json({ error: "Item not found" });
+  }
 });
 
 // GET / - return all products
@@ -81,9 +116,67 @@ app.get('/electronics/:id', (req, res) => {
 // With invalid category: return { "error": "Invalid category. Use 'snacks' or 'electronics'." }
 // Also supports ?maxPrice= and ?sort= (same rules as collection endpoints)
 app.get('/', (req, res) => {
-  // TODO: Implement this route
-  // Hint: use req.query to access query parameters (e.g., req.query.category)
+
+  const { category, sort } = req.query;
+  const maxPrice           = req.query.maxPrice === undefined ? undefined : Number(req.query.maxPrice);
+
+  if (maxPrice !== undefined) { // Check if maxPrice is provided
+    if (Number.isNaN(maxPrice) || maxPrice <= 0) {  // Validate maxPrice
+      res.json({ error: "Invalid maxPrice. Must be a positive number." });
+      return; // Return early if invalid
+    }
+  }
+
+  if (sort !== undefined) { // Check if sort is provided
+    if (sort !== "asc" && sort !== "desc") { // Validate sort
+      res.json({ error: "Invalid sort. Use 'asc' or 'desc'." });
+      return; // Return early if invalid
+    }
+  }
+
+  // Validate category
+  if (category !== undefined && category !== "snacks" && category !== "electronics") {
+    res.json({
+      error: "Invalid category. Use 'snacks' or 'electronics'.",
+    });
+    return; // Return early if invalid
+  }
+
+  // Function to apply filters and sorting
+  const applyFilters = (items, maxPrice, sort) => {
+    const results = items.filter( 
+      (item) => maxPrice === undefined || item.price <= maxPrice, // Filter by maxPrice if provided
+      // maxPrice === undefined means no filtering, so we include all items
+      // || only evaluates the second condition if the first is false, so if maxPrice is undefined, we include all items
+    );
+
+    if (sort === "asc") { // Sort by price ascending
+      results.sort((a, b) => a.price - b.price); 
+    } else if (sort === "desc") { // Sort by price descending
+      results.sort((a, b) => b.price - a.price); 
+    }
+    return results;
+  };
+
+  if (category === "snacks") { // If category is snacks, return only snacks
+    res.json(applyFilters(snacks, maxPrice, sort)); 
+  } else if (category === "electronics") { // If category is electronics, return only electronics
+    res.json(applyFilters(electronics, maxPrice, sort));
+  } else { // If no category is provided, return both snacks and electronics
+    res.json({
+      snacks: applyFilters(snacks, maxPrice, sort),
+      electronics: applyFilters(electronics, maxPrice, sort),
+    });
+  }
+
 });
+
+app.use(function (req, res) {
+  res
+    .status(404)
+    .type('.html') 
+    .end('<html><title>NOT FOUND</title><body><h1>SORRY FILE NOT FOUND</h1></body></html>');
+})
 
 // ============================================================
 // Server startup

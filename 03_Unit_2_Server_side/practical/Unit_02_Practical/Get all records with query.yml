@@ -1,0 +1,24 @@
+info:
+  name: Get all records with query
+  type: http
+
+http:
+  method: GET
+  url: http://localhost:3000/?category=snacks&maxPrice=2&sort=desc
+  params:
+    - name: category
+      value: snacks
+      type: query
+    - name: maxPrice
+      value: "2"
+      type: query
+    - name: sort
+      value: desc
+      type: query
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

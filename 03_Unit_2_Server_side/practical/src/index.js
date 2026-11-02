@@ -160,7 +160,6 @@ app.get('/', (req, res) => {
     }
     return results;
   };
-  
 
   if (category === 'snacks') { // snacks
     res.json(applyFilters(snacks, maxPrice, sort));

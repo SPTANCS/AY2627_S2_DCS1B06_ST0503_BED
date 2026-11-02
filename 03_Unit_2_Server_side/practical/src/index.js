@@ -117,18 +117,21 @@ app.get('/electronics/:id', (req, res) => {
 // Also supports ?maxPrice= and ?sort= (same rules as collection endpoints)
 app.get('/', (req, res) => {
 
-  const { category, sort } = req.query;
-  const maxPrice           = req.query.maxPrice === undefined ? undefined : Number(req.query.maxPrice);
+  // const category = req.query.category;
+  // const sort     = req.query.sort;
+  
+  const {category, sort} = req.query;
+  const maxPrice = req.query.maxPrice == undefined ?  undefined : Number(req.query.maxPrice);
 
-  if (maxPrice !== undefined) { // Check if maxPrice is provided
-    if (Number.isNaN(maxPrice) || maxPrice <= 0) {  // Validate maxPrice
+  if (maxPrice !== undefined) {
+    if (Number.isNaN(maxPrice) || maxPrice <= 0) {
       res.json({ error: "Invalid maxPrice. Must be a positive number." });
       return; // Return early if invalid
     }
   }
 
-  if (sort !== undefined) { // Check if sort is provided
-    if (sort !== "asc" && sort !== "desc") { // Validate sort
+  if (sort !== undefined) {
+    if (sort !== 'asc' && sort !== 'desc') {
       res.json({ error: "Invalid sort. Use 'asc' or 'desc'." });
       return; // Return early if invalid
     }
@@ -157,19 +160,22 @@ app.get('/', (req, res) => {
     }
     return results;
   };
+  
 
-  if (category === "snacks") { // If category is snacks, return only snacks
-    res.json(applyFilters(snacks, maxPrice, sort)); 
-  } else if (category === "electronics") { // If category is electronics, return only electronics
+  if (category === 'snacks') { // snacks
+    res.json(applyFilters(snacks, maxPrice, sort));
+  } else if (category === 'electronics') { // electronics
     res.json(applyFilters(electronics, maxPrice, sort));
-  } else { // If no category is provided, return both snacks and electronics
+  } else {  // root /
     res.json({
       snacks: applyFilters(snacks, maxPrice, sort),
-      electronics: applyFilters(electronics, maxPrice, sort),
+      electronics: applyFilters(electronics, maxPrice, sort)
     });
   }
-
 });
+
+
+
 
 app.use(function (req, res) {
   res

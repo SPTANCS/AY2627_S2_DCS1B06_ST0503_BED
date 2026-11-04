@@ -1,0 +1,22 @@
+info:
+  name: electronics update by Id
+  type: http
+  seq: 10
+
+http:
+  method: PUT
+  url: http://localhost:3000/snacks/2
+  body:
+    type: json
+    data: |-
+      {
+        "price": 3.7,
+        "quantity" : 20
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

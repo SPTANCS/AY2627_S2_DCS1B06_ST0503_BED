@@ -1,0 +1,22 @@
+info:
+  name: snacks add new
+  type: http
+
+http:
+  method: POST
+  url: http://localhost:3000/snacks
+  body:
+    type: json
+    data: |-
+      {
+        "name" : "Pop Candy",
+        "price": 5.5,
+        "quantity" : 11
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

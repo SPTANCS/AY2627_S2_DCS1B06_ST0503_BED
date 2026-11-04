@@ -1,0 +1,23 @@
+info:
+  name: electronics add new
+  type: http
+  seq: 8
+
+http:
+  method: POST
+  url: http://localhost:3000/electronics
+  body:
+    type: json
+    data: |-
+      {
+        "name" : "pocket TV",
+        "price": 70.99,
+        "quantity" : 15
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

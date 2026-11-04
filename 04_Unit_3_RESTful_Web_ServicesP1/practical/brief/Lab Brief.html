@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Express CRUD Practical</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&amp;family=Syne:wght@700;800&amp;family=DM+Sans:wght@400;500&amp;display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0c0f1a;
+      --surface: #131726;
+      --surface2: #1a1f35;
+      --border: #252d4a;
+      --accent: #4fffb0;
+      --accent4: #74b9ff;
+      --accent5: #a29bfe;
+      --text: #e8eaf6;
+      --muted: #8892b0;
+      --get: #4fffb0;
+      --post: #74b9ff;
+      --put: #ffd166;
+      --delete: #ff6b6b;
+      --instructor: #a29bfe;
+      --student: #ffd166;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      padding: 32px 24px 48px;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle, #ffffff07 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    header { margin-bottom: 28px; }
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      background: linear-gradient(90deg, #fff, #8892b0);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    h1 span {
+      background: linear-gradient(90deg, var(--accent), var(--accent4));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .subtitle {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      margin-top: 4px;
+    }
+
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 28px 0 14px;
+    }
+    .section-label span {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #3a4470;
+      white-space: nowrap;
+    }
+    .section-label::before,
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .question {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+    .q-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    .q-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 5px;
+      flex-shrink: 0;
+    }
+    .q-num-instructor { background: #a29bfe18; color: var(--instructor); border: 1px solid #a29bfe40; }
+    .q-num-student    { background: #ffd16618; color: var(--student);    border: 1px solid #ffd16640; }
+    .q-num-all        { background: #4fffb018; color: var(--accent);     border: 1px solid #4fffb040; }
+    .q-num-bonus      { background: #ff6b6b18; color: var(--delete);     border: 1px solid #ff6b6b40; }
+    .q-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .q-mode {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-left: auto;
+      white-space: nowrap;
+    }
+    .mode-instructor { color: var(--instructor); }
+    .mode-student    { color: var(--student); }
+    .mode-all        { color: var(--accent); }
+    .mode-bonus      { color: var(--delete); }
+
+    .method-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.66rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 5px;
+      flex-shrink: 0;
+    }
+    .tag-post   { background: #74b9ff18; color: var(--post);   border: 1px solid #74b9ff40; }
+    .tag-put    { background: #ffd16618; color: var(--put);    border: 1px solid #ffd16640; }
+    .tag-delete { background: #ff6b6b18; color: var(--delete); border: 1px solid #ff6b6b40; }
+    .tag-all    { background: #a29bfe18; color: var(--accent5);border: 1px solid #a29bfe40; }
+    .tag-get    { background: #4fffb018; color: var(--get);    border: 1px solid #4fffb040; }
+
+    .q-body { padding: 12px 14px; }
+    .q-desc {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+
+    .steps {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .steps li {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+    .step-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--accent4);
+      background: #74b9ff12;
+      border: 1px solid #74b9ff30;
+      border-radius: 4px;
+      padding: 1px 6px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .step-num-status {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--put);
+      background: #ffd16612;
+      border: 1px solid #ffd16630;
+      border-radius: 4px;
+      padding: 1px 6px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .hint {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--accent);
+      background: #4fffb008;
+      border-left: 2px solid #4fffb040;
+      padding: 6px 10px;
+      margin-top: 10px;
+      border-radius: 0 6px 6px 0;
+    }
+
+    .steps-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 8px 0;
+      opacity: 0.5;
+    }
+
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--accent4);
+      background: #74b9ff10;
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    .route-path {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem;
+      color: var(--text);
+    }
+
+    .intro-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+    }
+    .intro-block p {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .intro-block p + p { margin-top: 8px; }
+
+    .legend {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.74rem;
+    }
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 28px;
+      color: #3a4470;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+    }
+</style>
+</head><body><div class="container"><header>
+<h1>Express CRUD <span>Practical</span></h1>
+<div class="subtitle">Shopping Server — POST · DELETE · PUT · Status Codes · Error Handling</div>
+</header>
+<div class="intro-block">
+<p>The GET routes are already implemented. Your job is to complete the POST, DELETE, and PUT routes in <code>index.js</code>. Each question pair starts with an instructor-led walkthrough on <code>/snacks</code>, followed by a student DIY exercise on <code>/electronics</code>.</p>
+<p>After all routes work, you'll wrap everything in try-catch for error handling.</p>
+<p>Use API Client (e.g. Bruno, Postman) to test your routes.</p>
+<div class="legend">
+<div class="legend-item"><span class="legend-dot" style="background: var(--instructor);"></span> Instructor Led</div>
+<div class="legend-item"><span class="legend-dot" style="background: var(--student);"></span> Student DIY</div>
+<div class="legend-item"><span class="legend-dot" style="background: var(--accent);"></span> Everyone</div>
+<div class="legend-item"><span class="legend-dot" style="background: var(--delete);"></span> Bonus</div>
+</div>
+</div>
+<!-- ── POST ── -->
+<div class="section-label"><span>Create — POST</span></div>
+<div class="question">
+<div class="q-header"><span class="q-num q-num-instructor">Q1</span> <span class="method-tag tag-post">POST</span> <span class="q-title">/snacks</span> <span class="q-mode mode-instructor">Instructor Led</span></div>
+<div class="q-body">
+<p class="q-desc">Add a new snack to the array. The request body will contain <code>name</code>, <code>price</code>, and <code>quantity</code>.</p>
+<ol class="steps">
+<li><span class="step-num">1</span> Extract <code>name</code>, <code>price</code>, <code>quantity</code> from <code>req.body</code></li>
+<li><span class="step-num">2</span> Validate all three fields are present — if not, respond with an error JSON</li>
+<li><span class="step-num">3</span> Validate <code>price</code> is a positive number, <code>quantity</code> is a non-negative integer</li>
+<li><span class="step-num">4</span> Generate a new ID — copy the array, sort descending, take highest id + 1</li>
+<li><span class="step-num">5</span> Create a new object with <code>{ id, name, price, quantity }</code></li>
+<li><span class="step-num">6</span> Push to the snacks array and respond with the new object</li>
+</ol>
+<div class="steps-divider"></div>
+<ol class="steps">
+<li><span class="step-num-status">7</span> Success response → <code>res.status(201).json(...)</code></li>
+<li><span class="step-num-status">8</span> Validation errors → <code>res.status(400).json(...)</code></li>
+</ol>
+<div class="hint">Hints: <code>typeof</code> · <code>Number.isInteger()</code> · <code>.slice()</code> · <code>.sort()</code> · <code>.push()</code></div>
+</div>
+</div>
+<div class="question">
+<div class="q-header"><span class="q-num q-num-student">Q2</span> <span class="method-tag tag-post">POST</span> <span class="q-title">/electronics</span> <span class="q-mode mode-student">Student DIY</span></div>
+<div class="q-body">
+<p class="q-desc">Follow the same pattern as Q1 to add a new electronic item. Same validation rules, same ID generation logic — just targeting the <code>electronics</code> array. Include proper status codes: <code>201</code> on success, <code>400</code> for validation errors.</p>
+<div class="hint">Hints: <code>req.body</code> · <code>typeof</code> · <code>Number.isInteger()</code> · <code>.slice().sort()</code> · <code>.push()</code></div>
+</div>
+</div>
+<!-- ── DELETE ── -->
+<div class="section-label"><span>Delete — DELETE</span></div>
+<div class="question">
+<div class="q-header"><span class="q-num q-num-instructor">Q3</span> <span class="method-tag tag-delete">DELETE</span> <span class="q-title">/snacks/:id</span> <span class="q-mode mode-instructor">Instructor Led</span></div>
+<div class="q-body">
+<p class="q-desc">Delete a snack by its ID. The ID comes from the URL parameter.</p>
+<ol class="steps">
+<li><span class="step-num">1</span> Get the <code>id</code> from <code>req.params</code> and convert to a number</li>
+<li><span class="step-num">2</span> Find the item in the snacks array</li>
+<li><span class="step-num">3</span> If not found, respond with an error JSON</li>
+<li><span class="step-num">4</span> Remove it from the array and reassign</li>
+<li><span class="step-num">5</span> Respond with the deleted item</li>
+</ol>
+<div class="steps-divider"></div>
+<ol class="steps">
+<li><span class="step-num-status">6</span> Success response → <code>res.status(200).json(...)</code></li>
+<li><span class="step-num-status">7</span> Not found → <code>res.status(404).json(...)</code></li>
+</ol>
+<div class="hint">Hints: <code>Number()</code> · <code>.find()</code> · <code>.filter()</code></div>
+</div>
+</div>
+<div class="question">
+<div class="q-header"><span class="q-num q-num-student">Q4</span> <span class="method-tag tag-delete">DELETE</span> <span class="q-title">/electronics/:id</span> <span class="q-mode mode-student">Student DIY</span></div>
+<div class="q-body">
+<p class="q-desc">Follow the same pattern as Q3 to delete an electronic item by ID. Include proper status codes: <code>200</code> on success, <code>404</code> if not found.</p>
+<div class="hint">Hints: <code>Number(req.params.id)</code> · <code>.find()</code> · <code>.filter()</code></div>
+</div>
+</div>
+<!-- ── PUT ── -->
+<div class="section-label"><span>Update — PUT</span></div>
+<div class="question">
+<div class="q-header"><span class="q-num q-num-instructor">Q5</span> <span class="method-tag tag-put">PUT</span> <span class="q-title">/snacks/:id</span> <span class="q-mode mode-instructor">Instructor Led</span></div>
+<div class="q-body">
+<p class="q-desc">Update a snack by its ID. Only update fields that are provided in the request body.</p>
+<ol class="steps">
+<li><span class="step-num">1</span> Get the <code>id</code> from <code>req.params</code> and convert to a number</li>
+<li><span class="step-num">2</span> Find the item in the snacks array</li>
+<li><span class="step-num">3</span> If not found, respond with an error JSON</li>
+<li><span class="step-num">4</span> Extract <code>name</code>, <code>price</code>, <code>quantity</code> from <code>req.body</code></li>
+<li><span class="step-num">5</span> Only update fields that are provided — check <code>!== undefined</code></li>
+<li><span class="step-num">6</span> Validate <code>price</code> and <code>quantity</code> before updating (same rules as POST)</li>
+<li><span class="step-num">7</span> Respond with the updated item</li>
+</ol>
+<div class="steps-divider"></div>
+<ol class="steps">
+<li><span class="step-num-status">8</span> Success response → <code>res.status(200).json(...)</code></li>
+<li><span class="step-num-status">9</span> Not found → <code>res.status(404).json(...)</code></li>
+<li><span class="step-num-status">10</span> Validation errors → <code>res.status(400).json(...)</code></li>
+</ol>
+<div class="hint">Hints: <code>.find()</code> · <code>!== undefined</code> · <code>typeof</code> · <code>Number.isInteger()</code> · mutate the found object directly</div>
+</div>
+</div>
+<div class="question">
+<div class="q-header"><span class="q-num q-num-student">Q6</span> <span class="method-tag tag-put">PUT</span> <span class="q-title">/electronics/:id</span> <span class="q-mode mode-student">Student DIY</span></div>
+<div class="q-body">
+<p class="q-desc">Follow the same pattern as Q5 to update an electronic item by ID. Include proper status codes: <code>200</code> on success, <code>404</code> if not found, <code>400</code> for validation errors.</p>
+<div class="hint">Hints: <code>!== undefined</code> · <code>typeof</code> · <code>Number.isInteger()</code> · e.g. <code>item.name = name</code></div>
+</div>
+</div>
+<!-- ── TRY-CATCH ── -->
+<div class="section-label"><span>Error Handling</span></div>
+<div class="question">
+<div class="q-header"><span class="q-num q-num-instructor">Q7a</span> <span class="method-tag tag-post">POST</span> <span class="q-title">Wrap POST /snacks handler in try-catch</span> <span class="q-mode mode-instructor">Instructor Led</span></div>
+<div class="q-body">
+<p class="q-desc">Add a try-catch block inside the POST /snacks handler. If anything throws, catch it and return a 500 error.</p>
+<ol class="steps">
+<li><span class="step-num">1</span> Wrap the existing logic inside <code>try { ... }</code></li>
+<li><span class="step-num">2</span> In the <code>catch (err)</code> block, return <code>res.status(500).json({ error: err.message })</code></li>
+</ol>
+<div class="hint">Hint: <code>try { ... } catch (err) { res.status(500).json({ error: err.message }) }</code></div>
+</div>
+</div>
+<div class="question">
+<div class="q-header"><span class="q-num q-num-student">Q7b</span> <span class="method-tag tag-all">ALL</span> <span class="q-title">Wrap all other POST, DELETE, PUT handlers in try-catch</span> <span class="q-mode mode-student">Student DIY</span></div>
+<div class="q-body">
+<p class="q-desc">Apply the same try-catch pattern from Q7a to all remaining route handlers.</p>
+<ol class="steps">
+<li><span class="step-num">1</span> Wrap each handler's logic inside <code>try { ... }</code></li>
+<li><span class="step-num">2</span> In the <code>catch (err)</code> block, return <code>res.status(500).json({ error: err.message })</code></li>
+</ol>
+<div class="hint">Hint: <code>try { ... } catch (err) { res.status(500).json({ error: err.message }) }</code></div>
+</div>
+</div>
+<!-- ── BONUS ── -->
+<div class="section-label"><span>Bonus</span></div>
+<div class="question">
+<div class="q-header"><span class="q-num q-num-bonus">Q8</span> <span class="method-tag tag-get">GET</span> <span class="q-title">Refactor GET routes with status codes and try-catch</span> <span class="q-mode mode-bonus">Bonus</span></div>
+<div class="q-body">
+<p class="q-desc">Apply the same improvements to all existing GET routes.</p>
+<ol class="steps">
+<li><span class="step-num">1</span> Add <code>res.status(200)</code> for success responses</li>
+<li><span class="step-num">2</span> Add <code>res.status(400)</code> for invalid query params</li>
+<li><span class="step-num">3</span> Add <code>res.status(404)</code> for not-found-by-ID responses</li>
+<li><span class="step-num">4</span> Wrap each GET handler in try-catch with <code>res.status(500)</code> in the catch</li>
+</ol>
+</div>
+</div>
+<footer>express crud practical · simple shopping server</footer></div></body></html>

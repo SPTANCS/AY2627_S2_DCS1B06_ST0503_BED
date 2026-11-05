@@ -1,5 +1,6 @@
 import express from "express";
 import { fileURLToPath } from "url";
+import { toOptionalNumber, toOptionalInteger, allDefined } from "./validationUtils.js"
 
 const app = express();
 
@@ -175,22 +176,18 @@ app.get("/", (req, res) => {
 
 // TODO Q1: POST /snacks - add a new snack (INSTRUCTOR LED)
 app.post("/snacks", (req, res) => {
-  const name = req.body.name;
-  const price = req.body.price === undefined ? undefined : Number(req.body.price);
-  const quantity = req.body.quantity === undefined ? undefined : Number(req.body.quantity);
+  const name     = req.body.name;
+  const price    = toOptionalNumber(req.body.price);
+  const quantity = toOptionalInteger(req.body.quantity);
 
-  if (name === undefined || price === undefined || quantity === undefined) {
-    return res
-      .status(400)
-      .json({ error: "name, price, and quantity are required." });
+  if (!allDefined([name, price, quantity])) {
+    return res.status(400).json({ error: "name, price, and quantity are required." });
   }
-  if (Number.isNaN(price) || price <= 0) {
+  if (price <= 0) {
     return res.status(400).json({ error: "price must be a positive number." });
   }
-  if (!Number.isInteger(quantity) || quantity < 0) {
-    return res
-      .status(400)
-      .json({ error: "quantity must be a non-negative integer." });
+  if (quantity < 0) {
+    return res.status(400).json({ error: "quantity must be a non-negative integer." });
   }
 
   // find the highest existing ID by sorting a copy descending
@@ -211,6 +208,33 @@ app.post("/snacks", (req, res) => {
 // TODO Q2: POST /electronics - add a new electronic item (STUDENT DIY)
 app.post("/electronics", (req, res) => {
   // Same pattern as Q1 but for electronics array
+  const name     = req.body.name;
+  const price    = toOptionalNumber(req.body.price);
+  const quantity = toOptionalInteger(req.body.quantity);
+  
+  if (!allDefined([name, price, quantity])) {
+    return res.status(400).json({ error: 'name, price, and quantity are required.' });
+  }
+  if (price <= 0) {
+    return res.status(400).json({ error: 'price must be a positive number.' });
+  }
+  if (quantity < 0) {
+    return res.status(400).json({ error: 'quantity must be a non-negative integer.' });
+  }
+
+  // find the highest existing ID by sorting a copy descending
+  const sorted = [...electronics].sort((a, b) => b.id - a.id);
+  const newId = sorted.length > 0 ? sorted[0].id + 1 : 1;
+
+  const newItem = { 
+    id: newId, 
+    name: name, 
+    price: price, 
+    quantity: quantity 
+  };
+
+  electronics.push(newItem);
+  res.status(201).json(newItem);
 });
 
 // TODO Q3: DELETE /snacks/:id - delete a snack by ID (INSTRUCTOR LED)

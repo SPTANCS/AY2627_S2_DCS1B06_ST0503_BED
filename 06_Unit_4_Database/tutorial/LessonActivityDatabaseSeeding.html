@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seeding a Database from Scratch with Drizzle ORM</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&amp;family=Syne:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/vs2015.min.css">
+    <style>
+        :root {
+            --bg: #F5F2EB;
+            --ink: #1a1a18;
+            --ink2: #4a4a46;
+            --ink3: #8a8a84;
+            --accent: #D45C2A;
+            --border: #D6D0C4;
+            --card: #FDFAF5;
+            --blue-light: #DDE9F7;
+            --blue: #1E5FA8;
+            --yellow-light: #FDF5D4;
+            --yellow: #C69A00;
+            --mono: 'Roboto Mono', monospace;
+            --head: 'Syne', sans-serif;
+            --body: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--ink); font-family: var(--body); line-height: 1.6; }
+        
+        .header { background: #1a1a18; color: #FDFAF5; padding: 3rem; position: relative; overflow: hidden; }
+        .header-meta { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #7a7a74; margin-bottom: 12px; }
+        .header h1 { font-family: var(--head); font-size: 42px; font-weight: 800; line-height: 1.1; margin-bottom: 14px; }
+        .header-sub { font-size: 15px; color: #b0b0a8; max-width: 560px; white-space: pre-wrap; }
+
+        .container { max-width: 860px; margin: 0 auto; padding: 48px; }
+
+        .phase-header { display: flex; align-items: center; gap: 14px; margin: 44px 0 18px; }
+        .phase-pill { font-family: var(--mono); font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 4px 12px; border-radius: 3px; }
+        .pill-guided { background: var(--blue-light); color: var(--blue); }
+        .pill-solo { background: #DFF0E8; color: #2A7D4F; }
+        .pill-query { background: #EEE6F7; color: #6B3FA0; }
+        
+        .phase-line { flex: 1; height: 1px; background: var(--border); }
+        .phase-title { font-family: var(--head); font-size: 13px; font-weight: 700; color: var(--ink3); line-height: 1.5; padding-bottom: 2px; }
+
+        .task-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+        .task-header { display: flex; padding: 22px 28px; border-bottom: 1px solid var(--border); gap: 16px; }
+        .task-number { font-family: var(--head); font-size: 32px; font-weight: 800; color: var(--blue); opacity: 0.3; line-height: 1.2; }
+        .task-title { font-family: var(--head); font-size: 19px; font-weight: 700; line-height: 1.4; padding-bottom: 2px; }
+        .task-subtitle { font-size: 13px; color: var(--ink3); line-height: 1.4; white-space: pre-wrap; }
+        .task-body { padding: 22px 28px; }
+        .task-body p { font-size: 14px; color: var(--ink2); margin-bottom: 14px; }
+        .task-body ul, .task-body p ul { padding-left: 32px !important; margin-bottom: 16px; list-style-type: disc !important; }
+        .task-body ol, .task-body p ol { padding-left: 32px !important; margin-bottom: 16px; list-style-type: decimal !important; }
+        .task-body li { margin-bottom: 8px; font-size: 14px; color: var(--ink2); display: list-item !important; }
+
+        /* ASCII Block */
+        .ascii-container { margin: 24px 0; text-align: center; }
+        .ascii-art { font-family: var(--mono); font-size: 12px; line-height: 1.5; background: var(--bg); color: var(--ink); padding: 20px; border-radius: 8px; border: 1px solid var(--border); overflow-x: auto; text-align: left; white-space: pre; margin: 0; }
+        .ascii-caption { margin-top: 12px; font-size: 13.5px; color: var(--ink3); font-style: italic; }
+
+        .page-break { display: flex; justify-content: center; padding: 2rem 0; margin-top: 2rem; }
+        .continue-btn { background: var(--accent); color: white; border: none; padding: 0.75rem 2rem; border-radius: 2rem; font-family: var(--head); font-weight: 700; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 14px rgba(212,92,42,0.3); transition: all 0.2s; }
+        .continue-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(212,92,42,0.4); }
+
+        .quiz-container { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 24px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .quiz-question-block + .quiz-question-block { margin-top: 20px; padding-top: 18px; border-top: 1px dashed var(--border); }
+        .quiz-question { font-family: var(--head); font-weight: 700; font-size: 17px; margin-bottom: 20px; color: var(--ink); }
+        .quiz-options { display: flex; flex-direction: column; gap: 12px; }
+        .quiz-opt { display: block; width: 100%; box-sizing: border-box; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; text-align: left; font-family: var(--body); font-size: 15px; line-height: 1.5; cursor: pointer; transition: all 0.2s; }
+        .quiz-opt:hover { background: #f3f4f6; border-color: #d1d5db; }
+        .quiz-opt.selected { border-color: var(--ink); background: #f3f4f6; font-weight: 600; }
+        .quiz-opt.correct { background: #ecfdf5 !important; border-color: #10b981 !important; color: #065f46 !important; }
+        .quiz-opt.incorrect { background: #fef2f2 !important; border-color: #ef4444 !important; color: #991b1b !important; }
+        .quiz-opt p, .quiz-opt ul, .quiz-opt ol { margin-top: 0; margin-bottom: 0; }
+        .quiz-opt p + p, .quiz-opt p + ul, .quiz-opt p + ol, .quiz-opt ul + p, .quiz-opt ol + p { margin-top: 8px; }
+        .quiz-question code, .quiz-opt code { font-family: var(--mono); background: #eceae4; padding: 1px 5px; border-radius: 3px; font-size: 0.85em; display: inline; vertical-align: baseline; }
+        .quiz-feedback { margin-top: 24px; font-size: 14.5px; line-height: 1.5; }
+        .feedback-correct { background: #d1fae5; color: #065f46; padding: 16px; border-radius: 8px; }
+        .feedback-incorrect { background: #fee2e2; color: #991b1b; padding: 16px; border-radius: 8px; }
+
+        .accordion-list { margin: 24px 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+        .accordion-item { border-bottom: 1px solid var(--border); }
+        .accordion-item:last-child { border-bottom: none; }
+        .accordion-header { width: 100%; padding: 16px 20px; display: flex; align-items: center; gap: 12px; background: white; border: none; text-align: left; font-family: var(--head); font-weight: 700; font-size: 15px; cursor: pointer; color: var(--ink); }
+        .accordion-toggle-icon { color: var(--accent); font-family: var(--mono); font-size: 18px; width: 16px; }
+        .accordion-content { padding: 16px 20px 24px; background: #fafafa; font-size: 15px; line-height: 1.6; color: var(--ink2); border-top: 1px solid #f3f4f6; }
+
+        .comparison-table-wrapper { margin: 24px 0; overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
+        .comparison-table { width: 100%; border-collapse: collapse; background: white; }
+        .comparison-table th { background: #f8f9fa; padding: 16px; text-align: left; font-family: var(--head); font-size: 14px; color: var(--ink3); border-bottom: 1px solid var(--border); }
+        .comparison-table td { padding: 16px; font-size: 14px; line-height: 1.5; border-bottom: 1px solid #f3f4f6; width: 50%; }
+        .comparison-table tr td:first-child { border-right: 1px solid #f3f4f6; font-weight: 600; }
+
+        .syntax-strip { background: #1e1e1e; border-radius: 8px; padding: 0; margin: 14px 0; color: #d4d4d4; font-family: var(--mono); font-size: 12.5px; overflow: hidden; position: relative; }
+        .syntax-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 16px 0; }
+        .code-filename { font-family: var(--mono); font-size: 10px; color: #9cdcfe; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .syntax-lang { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: #6a9955; margin-left: auto; }
+        .syntax-strip pre { margin: 0; padding: 12px 16px 16px; overflow-x: auto; }
+        .syntax-strip pre code { background: none !important; padding: 0 !important; color: inherit; font-size: 12.5px; line-height: 1.8; }
+        .syntax-strip .hljs { background: transparent !important; padding: 0 !important; }
+        .hint-box { display: flex; gap: 12px; padding: 13px 16px; border-radius: 8px; margin: 12px 0; border-left: 3px solid; }
+        .hint-box.blue { background: var(--blue-light); border-color: var(--blue); }
+        .hint-box.yellow { background: var(--yellow-light); border-color: var(--yellow); }
+        .hint-box p { font-size: 13px; margin: 0; }
+
+        .steps-container { display: flex; flex-direction: column; gap: 16px; margin: 24px 0; }
+        .step-item { display: flex; gap: 16px; align-items: flex-start; }
+        .step-badge { font-family: var(--mono); font-size: 11px; width: 26px; height: 26px; background: var(--blue-light); color: var(--blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 700; }
+        .step-content { flex: 1; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+
+        code { font-family: var(--mono); background: #ECEAE4; padding: 1px 5px; border-radius: 3px; font-size: 12.5px; display: inline; }
+        .method-pill { font-family: var(--mono); font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 4px; background: #E6EDFA; color: var(--blue); }
+
+        .hidden { display: none !important; }
+        .section-wrapper.hidden { display: none; }
+
+        /* Navigation Sidebar */
+        .nav-toggle { position: fixed; top: 50%; left: 0; transform: translateY(-50%); z-index: 1000; background: var(--accent); color: white; border: none; width: 48px; height: 56px; border-radius: 0 12px 12px 0; font-size: 22px; cursor: pointer; box-shadow: 4px 0 16px rgba(212,92,42,0.45); display: flex; align-items: center; justify-content: center; transition: width 0.2s, box-shadow 0.2s; }
+        .nav-toggle:hover { width: 56px; box-shadow: 6px 0 20px rgba(212,92,42,0.6); }
+        .nav-sidebar { position: fixed; top: 0; left: -320px; width: 300px; height: 100vh; background: white; border-right: 1px solid var(--border); z-index: 999; transition: left 0.3s ease; overflow-y: auto; padding: 24px 20px 20px; box-shadow: 4px 0 20px rgba(0,0,0,0.1); }
+        .nav-sidebar.open { left: 0; }
+        .nav-sidebar h3 { font-family: var(--head); font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink3); margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+        .nav-link { display: flex; align-items: center; padding: 10px 14px; margin-bottom: 4px; border-radius: 6px; font-family: var(--body); font-size: 13px; color: var(--ink2); text-decoration: none; cursor: pointer; border: none; background: none; width: 100%; text-align: left; transition: all 0.15s; }
+        .nav-link:hover { background: var(--bg); color: var(--ink); }
+        .nav-link.active { background: #fde8dc; color: var(--accent); font-weight: 600; border-left: 3px solid var(--accent); }
+        .nav-link .nav-num { font-family: var(--mono); font-size: 10px; color: var(--ink3); margin-right: 10px; flex-shrink: 0; }
+    </style>
+</head><body><p><button class="nav-toggle" id="navToggle">☰</button></p>
+<div class="nav-sidebar" id="navSidebar">
+<h3>Sections</h3>
+<button class="nav-link" data-target="0"><span class="nav-num">01</span>What Is Database Seeding?</button><button class="nav-link" data-target="1"><span class="nav-num">02</span>Set Up the Project</button><button class="nav-link" data-target="2"><span class="nav-num">03</span>Create the Connection, Config, and Schema</button><button class="nav-link" data-target="3"><span class="nav-num">04</span>Write seed.js Step by Step</button><button class="nav-link" data-target="4"><span class="nav-num">05</span>Run npm run db</button><button class="nav-link" data-target="5"><span class="nav-num">06</span>Check Your Understanding</button><button class="nav-link" data-target="6"><span class="nav-num">07</span>Do It Yourself</button><button class="nav-link" data-target="7"><span class="nav-num">08</span>Using This in CA1 and CA2</button></div>
+<div class="header">
+<div class="header-meta">TUTORIAL: Database seeding</div>
+<h1>Seeding a Database from Scratch with Drizzle ORM</h1>
+<p class="header-sub">Start from the provided starter folder and finish with a working "npm run db command" that creates database tables and fills them with starter data.</p>
+</div>
+<div class="container">
+<div class="section-wrapper" id="section-0">
+<div class="phase-header">
+<div class="phase-pill pill-guided">📖 Concept</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 1 of 8</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">01</div>
+<div class="task-title-block">
+<div class="task-title">What Is Database Seeding?</div>
+<div class="task-subtitle">Why we fill a fresh database with starter data.</div>
+</div>
+</div>
+<div class="task-body">
+<p><b>Seeding</b> means loading a database with an initial set of data. When you clone a project or wipe your local database, the tables start empty. A <b>seed script</b> recreates the tables and inserts known sample rows so you always have something to build against.</p>
+<p>In this lesson you start from the provided <b>db-seeding-starter</b> folder and build the database layer yourself. You will initialise the project, install packages, describe your tables, and write the command <code>npm run db</code>. When that command runs it does two things: it makes sure the tables described in your schema exist, then it inserts sample data into any table that is still empty.</p>
+<div class="ascii-container">
+<pre class="ascii-art">  schema.js            seed.js               local.db
+ +-------------+       +-------------+       +-------------+
+ | table       | ----&gt; | push tables | ----&gt; |  authors    |
+ | data type   |       | + insert    |       |  animes     |
+ +-------------+       |   sample    |       | (with rows) |
+                       |   rows      |       +-------------+
+                       +-------------+</pre>
+<p class="ascii-caption">schema.js defines column &amp; type, seed.js generates the database file (local.db)</p>
+</div>
+<div class="hint-box blue"><span class="hint-icon">💡</span>
+<p>A good seed script is <b>idempotent</b>: running it many times does not create duplicate data. We achieve this by only inserting into a table when it is empty.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-1">
+<div class="phase-header">
+<div class="phase-pill pill-guided">✦ Code-along</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 2 of 8</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">02</div>
+<div class="task-title-block">
+<div class="task-title">Set Up the Project</div>
+<div class="task-subtitle">Download the starter, then initialise npm, install packages, and turn on ES module imports.</div>
+</div>
+</div>
+<div class="task-body">
+<p><b>Do this:</b> download the <b>db-seeding-starter</b> folder from Brightspace, unzip it, and open it in your editor. Open a terminal inside that folder. You will run every command below from there.</p>
+<p>The starter is a small skeleton with the pieces that are not the focus of this lesson already filled in.</p>
+<div><code>index.js</code> is an Express server with <code>GET /authors</code> and <code>GET /animes</code> routes.</div>
+<div><code>src/db/seed.js</code> holds the sample data you will seed.</div>
+<div><code>_extras/tests/seed.test.js</code> holds the tests that pass once your database is seeded.</div>
+<div><code>vitest.config.js</code> and <code>.gitignore</code> are configuration.</div>
+<div></div>
+<div></div>
+<div>Everything else is what <b>you</b> build in this lesson: <code>package.json</code>, the schema (<code>src/db/schema.js</code>&nbsp;), the connection (<code>src/db/connnection.js</code>&nbsp;), the Drizzle config (<code>drizzle.config.js</code>&nbsp;), and the seeding logic (<code>src/db/seed.js</code>&nbsp;).</div>
+<p></p>
+<div class="hint-box blue"><span class="hint-icon">💡</span>
+<p>Two kinds of blocks appear below, so watch which is which. A plain command block is something you type into your <b>terminal</b> and run, for example <code>npm init -y</code>. A code block with a file name at the top, such as <code>package.json</code>, is a <b>file</b> you create or edit in your code editor.</p>
+</div>
+<p><b></b></p>
+<p><b>Step 1: Initialise the project.</b> The starter has no <code>package.json</code> yet. In your terminal, make sure you are inside the starter folder, then run <code>npm init -y</code>. This creates a <code>package.json</code>, the file that tracks your dependencies and scripts.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">bash</div>
+</div>
+<pre><code class="language-bash">cd db-seeding-starter
+npm init -y</code></pre>
+</div>
+<p><b></b></p>
+<p><b>Step 2: Install the packages.</b>&nbsp;You are later going to install a package called drizzle-kit with:&nbsp;<span style="font-family: Roboto Mono, monospace;"><span style="font-size: 11.9px; background-color: #eceae4;">npm install drizzle-kit</span></span></p>
+<div><span style="font-family: Roboto Mono, monospace;"><span style="font-size: 11.9px;"><br></span></span>
+<div>This gives you a <code>drizzle-kit</code> command that the seed uses to build tables. A command like that only works once its package is installed in your project, so let's prove that before and after installing.</div>
+</div>
+<p></p>
+<p>First, try this command in your terminal&nbsp;<b>before</b> installing anything:</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">bash</div>
+</div>
+<pre><code class="language-bash">npx drizzle-kit --version</code></pre>
+</div>
+<p>This command fails because <code>drizzle-kit</code> is not part of your project yet.</p>
+<p>Now install the packages. In your terminal, run the two commands below. Runtime dependencies are used when the app runs, and dev dependencies are used only while developing (functionally there is no difference if you omit --save-dev).</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">bash</div>
+</div>
+<pre><code class="language-bash"># runtime dependencies
+npm install @libsql/client drizzle-orm express
+
+# dev dependencies
+npm install --save-dev drizzle-kit nodemon</code></pre>
+</div>
+<div class="hint-box blue"><span class="hint-icon">💡</span>
+<p>Back in your terminal, run <code>npx drizzle-kit --version</code> again. This time it prints a version straight away. The command is now recognised because <code>npm install</code> added <code>drizzle-kit</code> to your project's <code>node_modules</code>, and your npm scripts and <code>npx</code> run that local copy.</p>
+</div>
+<p><b></b></p>
+<p><b>Step 3: Turn on ES module imports.</b> In your code editor, open <code>package.json</code> and add the line <code>"type": "module"</code>. This lets you use <code>import</code> and top-level <code>await</code>, both of which the seed script relies on.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">package.json</div>
+<div class="syntax-lang">json</div>
+</div>
+<pre><code class="language-json">{
+  "name": "db-seeding",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon index.js",
+    "db": "node src/db/seed.js"
+  }
+}</code></pre>
+</div>
+<div class="hint-box yellow"><span class="hint-icon">⚠️</span>
+<p>The <code>"db"</code> script points at <code>src/db/seed.js</code>. That file already exists in the starter with the sample data, but it does not seed anything yet. You will add the seeding logic later in this lesson.</p>
+</div>
+<div class="quiz-container" id="quiz-b-210">
+<div class="quiz-question-block" data-question-index="0">
+<div class="quiz-question">Q1. Why does <code>npx drizzle-kit --version</code> work after installing but not before?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="true" tabindex="0">Installing adds drizzle-kit to your project, so npx can run the local copy</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">The command is always available, you just typed it wrong the first time</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">npm init created the drizzle-kit command</div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Right. The command is recognised because npm install placed drizzle-kit in your project's node_modules.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>Not quite. The command becomes available only once npm install adds drizzle-kit to your project's node_modules.</div>
+</div>
+</div>
+</div>
+<div class="quiz-question-block" data-question-index="1">
+<div class="quiz-question">Q2. Why is <code>drizzle-kit</code> installed with <code>--save-dev</code>?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="1" data-correct="true" tabindex="0">It is only needed during development, to create tables from your schema</div>
+<div class="quiz-opt" role="button" data-question-index="1" data-correct="false" tabindex="0">It must never be used in this project</div>
+<div class="quiz-opt" role="button" data-question-index="1" data-correct="false" tabindex="0">It makes the database run in production</div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Correct. drizzle-kit is a development tool that pushes your schema into the database; it is not needed at runtime.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>No. --save-dev marks a package as a development-only tool. drizzle-kit is used to build tables during development.</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-2">
+<div class="phase-header">
+<div class="phase-pill pill-guided">✦ Code-along</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 3 of 8</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">03</div>
+<div class="task-title-block">
+<div class="task-title">Create the Connection, Config, and Schema</div>
+<div class="task-subtitle">The three files the seed relies on.</div>
+</div>
+</div>
+<div class="task-body">
+<p><b>Do this:</b> create the three files below in your code editor. The connection and config are infrastructure you write once and leave alone. The schema is where you describe your tables, so you will come back to it whenever you add a new one. First you need a <code>src/db</code> folder. You can make it in your editor, or run the command below in your terminal from the root folder:</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">bash</div>
+</div>
+<pre><code class="language-bash">mkdir -p src/db</code></pre>
+</div>
+<p><b>File 1: connection.js.</b> This file opens the SQLite database and exports a <code>db</code> object that every query goes through. In your editor, create <code>src/db/connection.js</code> with the code below.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">src/db/connection.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">import { createClient } from '@libsql/client';
+import { drizzle } from 'drizzle-orm/libsql';
+
+const client = createClient({
+  url: 'file:local.db',
+});
+
+export const db = drizzle(client);</code></pre>
+</div>
+<p></p>
+<p>Here is what each line does:&nbsp;</p>
+<p><code>import { createClient } from '@libsql/client'</code> brings in the low-level SQLite client.</p>
+<p><code>import { drizzle } from 'drizzle-orm/libsql'</code> brings in the Drizzle ORM wrapper.</p>
+<p><code>createClient({ url: 'file:local.db' })</code> opens the database stored in the file <code>local.db</code>, creating that file if it does not exist yet.</p>
+<p>&nbsp;<code>drizzle(client)</code> wraps the client so you can query with JavaScript instead of raw SQL.</p>
+<p><code>export const db</code> shares that wrapped connection, so every other file imports the same <code>db</code>.</p>
+<p></p>
+<p>Notice the <code>drizzle</code> wrapper around the client... because:</p>
+<div>Drizzle is an <b>ORM</b> (Object Relational Mapper), an extra layer that sits between your code and the database. Later you will query the database with ORM code written in JavaScript, but <u>databases only understand SQL. The ORM translates your JavaScript into the SQL the database runs for you.</u></div>
+<p></p>
+<div class="comparison-table-wrapper">
+<table class="comparison-table">
+<thead>
+<tr>
+<th>Drizzle (JavaScript, what you write)</th>
+<th>SQL (what the database actually runs)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>db.select().from(authors)</code></td>
+<td><code>SELECT * FROM authors;</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><b>File 2: drizzle.config.js.</b> This file tells the Drizzle CLI where your schema lives and which database file to push tables into. In your editor, create <code>drizzle.config.js</code> in the project root, next to <code>package.json</code>.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">drizzle.config.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">export default {
+  schema: './src/db/schema.js',
+  dialect: 'sqlite',
+  dbCredentials: {
+    url: 'file:local.db',
+  },
+};</code></pre>
+</div>
+<p>Each field tells the Drizzle CLI how to build your database:</p>
+<p><code>schema</code> points at the file that defines your tables, so the CLI knows what to create.</p>
+<p><code>dialect: 'sqlite'</code> says which database engine you are using.</p>
+<p>&nbsp;<code>dbCredentials.url</code> points at the same <code>local.db</code> file as your connection, so the CLI and your app read and write one shared database.</p>
+<p><b>File 3: schema.js.</b> This file describes your tables in JavaScript. In your editor, create <code>src/db/schema.js</code> with two tables: <code>authors</code>, and <code>animes</code> which references an author by id. That reference makes a one-to-many relationship, where one author can have many animes.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">src/db/schema.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+
+// An author can have many animes.
+export const authors = sqliteTable('authors', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  bio: text('bio'),
+});
+
+// Each anime belongs to one author (authorId points at authors.id).
+export const animes = sqliteTable('animes', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  title: text('title').notNull(),
+  genre: text('genre'),
+  episodes: integer('episodes'),
+  authorId: integer('author_id').references(() =&gt; authors.id),
+});</code></pre>
+</div>
+<p>Walking through the authors table:</p>
+<p><code>import { sqliteTable, text, integer }</code> brings in the helpers for defining a table and its column types.</p>
+<p><code>sqliteTable('authors', { ... })</code> defines a table named <code>authors</code>, and the object describes its columns.</p>
+<p><code>integer('id').primaryKey({ autoIncrement: true })</code> makes <code>id</code> the primary key that counts up automatically for each new row.</p>
+<p><code>text('name').notNull()</code> is a required text column, so every author must have a name.</p>
+<p><code>text('bio')</code> is an optional text column, so it can be left empty.</p>
+<p>The animes table follows the same pattern, with one extra column that creates the relationship: <code>authorId: integer('author_id').references(() =&gt; authors.id)</code> stores an author's <code>id</code> on each anime. That reference is what links every anime back to one row in <code>authors</code>, giving you the one-to-many relationship.</p>
+<div class="quiz-container" id="quiz-b-309">
+<div class="quiz-question-block" data-question-index="0">
+<div class="quiz-question">Q1. What is the job of <code>schema.js</code>?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">It opens the connection to the database file</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="true" tabindex="0">It describes the shape of your tables</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">It inserts sample rows into the database</div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Right. schema.js defines table structure; the connection and seeding happen elsewhere.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>Not quite. Opening the connection is connection.js, and inserting rows is seed.js. schema.js only describes table shapes.</div>
+</div>
+</div>
+</div>
+<div class="quiz-question-block" data-question-index="1">
+<div class="quiz-question">Q2. Which command reads <code>drizzle.config.js</code> to create tables?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="1" data-correct="true" tabindex="0">npx drizzle-kit push</div>
+<div class="quiz-opt" role="button" data-question-index="1" data-correct="false" tabindex="0">npm install</div>
+<div class="quiz-opt" role="button" data-question-index="1" data-correct="false" tabindex="0">node connection.js</div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Correct. drizzle-kit push uses the config to push your schema into the database.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>No. The config is consumed by the Drizzle CLI command npx drizzle-kit push.</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-3">
+<div class="phase-header">
+<div class="phase-pill pill-guided">✦ Code-along</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 4 of 8</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">04</div>
+<div class="task-title-block">
+<div class="task-title">Write seed.js Step by Step</div>
+<div class="task-subtitle">Build the script that npm run db will execute.</div>
+</div>
+</div>
+<div class="task-body">
+<p><b>Do this:</b> in your code editor, open <code>src/db/seed.js</code> from the starter and build up the seeding logic using the steps below. Add each block in order. By the end the whole file is complete.</p>
+<div class="steps-container">
+<div class="step-item">
+<div class="step-badge">1</div>
+<div class="step-content">Import the tools: <code>execSync</code> to run the table-creation command, plus <code>db</code> and your tables.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">2</div>
+<div class="step-content">Define the sample data arrays you want to insert.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">3</div>
+<div class="step-content">Run <code>npx drizzle-kit push</code> to create the tables from the schema.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">4</div>
+<div class="step-content">For each table, check if it is empty and only insert when it is.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">5</div>
+<div class="step-content">Resolve the relationship so each anime points at the correct author id.</div>
+</div>
+</div>
+<p><b>Step 1: Imports.</b> Add these lines at the top of <code>seed.js</code>, above the sample data. <code>execSync</code> lets Node run a shell command and wait for it to finish. You also import the <code>db</code> object and the two table definitions.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">src/db/seed.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">import { execSync } from 'child_process';
+
+import { db } from './connection.js';
+import { authors, animes } from './schema.js';</code></pre>
+</div>
+<p><b>Step 2: Sample data.</b> The sample data already lives in your starter's <code>seed.js</code>, so you do not need to type it. It looks like the arrays below, shown abbreviated here. Authors are plain rows. For animes we store the author's <i>name</i> rather than the id for now, because the real id is only known after the authors are inserted.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">src/db/seed.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">// already provided in the starter
+const sampleAuthors = [
+  { name: 'Eiichiro Oda', bio: 'Creator of One Piece.' },
+  { name: 'Hajime Isayama', bio: 'Creator of Attack on Titan.' },
+  { name: 'Akira Toriyama', bio: 'Creator of Dragon Ball and Dr. Slump.' },
+];
+
+// `author` is the author name; it gets swapped for the real authorId before inserting.
+const sampleAnimes = [
+  { title: 'One Piece', genre: 'Adventure', episodes: 1000, author: 'Eiichiro Oda' },
+  { title: 'Attack on Titan', genre: 'Action', episodes: 25, author: 'Hajime Isayama' },
+  { title: 'Dragon Ball Z', genre: 'Action', episodes: 291, author: 'Akira Toriyama' },
+  { title: 'Dr. Slump', genre: 'Comedy', episodes: 243, author: 'Akira Toriyama' },
+];</code></pre>
+</div>
+<p><b>Step 3: Create the tables.</b> The seed pushes your schema into the database before inserting anything. Add the line below. It only creates what does not already exist, so it is safe to run every time.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">src/db/seed.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">console.log('Creating tables from schema...');
+execSync('npx drizzle-kit push', { stdio: 'inherit' });</code></pre>
+</div>
+<div class="hint-box blue"><span class="hint-icon">💡</span>
+<p>The option <code>{ stdio: 'inherit' }</code> forwards the command's output straight to your terminal so you can see the push progress live.</p>
+</div>
+<p><b>Step 4: Seed authors when empty.</b> Insert the sample authors only if the table has no rows yet. Add this block. It reads the table first, inserts the authors when the table is empty, and skips otherwise so you never duplicate data.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">src/db/seed.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">const existingAuthors = await db.select().from(authors);
+
+if (existingAuthors.length === 0) {
+  await db.insert(authors).values(sampleAuthors);
+  console.log(`Inserted ${sampleAuthors.length} authors`);
+} else {
+  console.log('Authors already seeded, skipping.');
+}</code></pre>
+</div>
+<p><b>Step 5: Seed animes and wire up the relationship.</b> Each anime needs the real <code>id</code> of its author, which only exists after the authors are inserted. Add this final block. It reads the inserted authors back, then maps every sample anime to its author's id before inserting.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">src/db/seed.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">const existingAnimes = await db.select().from(animes);
+
+if (existingAnimes.length === 0) {
+  const allAuthors = await db.select().from(authors);
+
+  const animeRows = sampleAnimes.map((anime) =&gt; {
+    const author = allAuthors.find((a) =&gt; a.name === anime.author);
+    return {
+      title: anime.title,
+      genre: anime.genre,
+      episodes: anime.episodes,
+      authorId: author.id,
+    };
+  });
+
+  await db.insert(animes).values(animeRows);
+  console.log(`Inserted ${animeRows.length} animes`);
+} else {
+  console.log('Animes already seeded, skipping.');
+}
+
+console.log('Done! Database is ready.');</code></pre>
+</div>
+<div class="hint-box yellow"><span class="hint-icon">⚠️</span>
+<p>Order matters. You must insert <b>authors before animes</b>, because each anime's <code>authorId</code> must reference an author that already exists. Seeding animes first would leave you with no valid id to point at.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-4">
+<div class="phase-header">
+<div class="phase-pill pill-guided">✦ Code-along</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 5 of 8</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">05</div>
+<div class="task-title-block">
+<div class="task-title">Run npm run db</div>
+<div class="task-subtitle">Execute your seed and confirm the database is built.</div>
+</div>
+</div>
+<div class="task-body">
+<p><b>Do this:</b> you already added the <code>"db"</code> script to <code>package.json</code> during setup. In your terminal, from the project root, run:</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">bash</div>
+</div>
+<pre><code class="language-bash">npm run db</code></pre>
+</div>
+<p>The first run creates <code>local.db</code>, pushes the tables, and inserts the sample rows</p>
+<p>&nbsp;You should see log lines about creating tables and inserting authors and animes, ending with <code>Done! Database is ready.</code></p>
+<p><b>Now run it again.</b> In your terminal, run <code>npm run db</code> a second time. It recreates any missing tables but skips seeding, printing the 'already seeded' messages. That is proof your script is <span style="text-decoration: underline;">idempotent</span>, meaning repeated runs do not change the result.</p>
+<div class="accordion-list">
+<div class="accordion-item"><button class="accordion-header"><span class="accordion-toggle-icon">+</span>Why "node src/db/seed.js" and not something else?</button>
+<div class="accordion-content hidden">The seed file is a plain Node script that uses <code>import</code> syntax. Because package.json sets <code>"type": "module"</code>, Node runs it as an ES module, so top-level <code>await</code> and imports work directly.</div>
+</div>
+<div class="accordion-item"><button class="accordion-header"><span class="accordion-toggle-icon">+</span>What if I change schema.js later?</button>
+<div class="accordion-content hidden">Edit the table in <code>schema.js</code>, then run <code>npm run db</code> again. The push step reshapes the tables to match. If you want fresh seed data, delete <code>local.db</code> first so the tables come back empty and get reseeded.</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-5">
+<div class="phase-header">
+<div class="phase-pill pill-guided">❓ Check Your Understanding</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 6 of 8</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">06</div>
+<div class="task-title-block">
+<div class="task-title">Check Your Understanding</div>
+<div class="task-subtitle">Make sure the key ideas stuck.</div>
+</div>
+</div>
+<div class="task-body">
+<div class="quiz-container" id="quiz-b-601">
+<div class="quiz-question-block" data-question-index="0">
+<div class="quiz-question">Q1. Why does the seed check <code>existingAuthors.length === 0</code> before inserting?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">To make the script run faster</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="true" tabindex="0">To keep the script idempotent so repeated runs do not create duplicate rows</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">Because Drizzle requires it</div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Exactly. Inserting only when the table is empty means you can safely run npm run db many times.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>Not quite. The check exists so that running the seed repeatedly does not insert the same rows again.</div>
+</div>
+</div>
+</div>
+<div class="quiz-question-block" data-question-index="1">
+<div class="quiz-question">Q2. Why must animes be inserted after authors?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="1" data-correct="false" tabindex="0">Alphabetical order</div>
+<div class="quiz-opt" role="button" data-question-index="1" data-correct="true" tabindex="0">Each anime's authorId must reference an author that already exists</div>
+<div class="quiz-opt" role="button" data-question-index="1" data-correct="false" tabindex="0">Animes are larger rows</div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Correct. The foreign key authorId needs a real author id, which only exists once authors are inserted.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>No. It is about the relationship: authorId must point at an author id that already exists in the database.</div>
+</div>
+</div>
+</div>
+<div class="quiz-question-block" data-question-index="2">
+<div class="quiz-question">Q3. What does <code>execSync('npx drizzle-kit push')</code> do in the seed?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="2" data-correct="false" tabindex="0">Inserts the sample data</div>
+<div class="quiz-opt" role="button" data-question-index="2" data-correct="true" tabindex="0">Creates the tables from schema.js in the database</div>
+<div class="quiz-opt" role="button" data-question-index="2" data-correct="false" tabindex="0">Deletes the database file</div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Right. The push command builds the tables that match your schema before any data is inserted.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>Not quite. Inserting data is done with db.insert(...). The push command creates the tables from your schema.</div>
+</div>
+</div>
+</div>
+<div class="quiz-question-block" data-question-index="3">
+<div class="quiz-question">Q4. After running <code>npm run db</code> a second time, what do you expect to see?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="3" data-correct="false" tabindex="0">The sample rows inserted again, doubling the data</div>
+<div class="quiz-opt" role="button" data-question-index="3" data-correct="true" tabindex="0">Messages that authors and animes are already seeded, and no new rows</div>
+<div class="quiz-opt" role="button" data-question-index="3" data-correct="false" tabindex="0">An error because the tables already exist</div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Correct. The empty-table checks cause the seed to skip, so no duplicates and no errors.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>No. The tables already have data, so the seed skips inserting and prints the 'already seeded' messages.</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-6">
+<div class="phase-header">
+<div class="phase-pill pill-solo">★ Do-it-yourself</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 7 of 8</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">07</div>
+<div class="task-title-block">
+<div class="task-title">Do It Yourself</div>
+<div class="task-subtitle">Create your own simple books table and seed it.</div>
+</div>
+</div>
+<div class="task-body">
+<p><b>Your task:</b> now do the whole loop yourself on a brand new table. Create a simple <code>books</code> table with just an <code>id</code> and a <code>title</code>, seed it with a few books of <b>your own choosing</b>, then run <code>npm run db</code> in your terminal. Keep it standalone, with no relationships to other tables.</p>
+<div class="hint-box blue"><span class="hint-icon">💡</span>
+<p>Your test only needs to confirm the books table is not empty, so check that the row count is greater than zero. In your terminal, run <code>npm run db</code> before <code>npm test</code>, and delete <code>local.db</code> first if you changed the schema.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-7">
+<div class="phase-header">
+<div class="phase-pill pill-guided">📖 Concept</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 8 of 8</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">08</div>
+<div class="task-title-block">
+<div class="task-title">Using This in CA1 and CA2</div>
+<div class="task-subtitle">You will not build the database layer from scratch again.</div>
+</div>
+</div>
+<div class="task-body">
+<p>You built everything from scratch here so the whole flow makes sense. For CA1 and CA2 you do not have to repeat that. Your starter code already includes a sample <code>src/db</code> folder, with the connection, schema, and seed set up for you.</p>
+<p>Your job is to edit that sample <code>src/db</code> for your own project's requirements. In your editor, swap the sample tables in <code>schema.js</code> for the ones your project needs and replace the sample data in <code>seed.js</code>. Then run <code>npm run db</code> in your terminal to build and seed your database.</p>
+</div>
+</div>
+</div>
+</div>
+<p>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+</p>
+<p><script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const wrappers = document.querySelectorAll('.section-wrapper');
+            const navLinks = document.querySelectorAll('.nav-link');
+            const navToggle = document.getElementById('navToggle');
+            const navSidebar = document.getElementById('navSidebar');
+
+            // Toggle nav sidebar
+            navToggle.addEventListener('click', () => {
+                navSidebar.classList.toggle('open');
+                navToggle.textContent = navSidebar.classList.contains('open') ? '✕' : '☰';
+                navToggle.style.left = navSidebar.classList.contains('open') ? '300px' : '0';
+                navToggle.style.borderRadius = navSidebar.classList.contains('open') ? '0 12px 12px 0' : '0 12px 12px 0';
+            });
+
+            // Initial hide: find first page_break and hide everything after it
+            let foundBreak = false;
+            wrappers.forEach((wrapper) => {
+                if (foundBreak) {
+                    wrapper.classList.add('hidden');
+                } else if (wrapper.querySelector('.continue-btn')) {
+                    foundBreak = true;
+                }
+            });
+
+            // Continue button logic
+            document.querySelectorAll('.continue-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const currentWrapper = e.target.closest('.section-wrapper');
+                    const currentIndex = parseInt(currentWrapper.id.split('-')[1]);
+                    e.target.parentElement.style.display = 'none';
+
+                    let nextIndex = currentIndex + 1;
+                    while (nextIndex < wrappers.length) {
+                        wrappers[nextIndex].classList.remove('hidden');
+                        if (wrappers[nextIndex].querySelector('.continue-btn')) break;
+                        nextIndex++;
+                    }
+                    if (wrappers[currentIndex + 1]) wrappers[currentIndex + 1].scrollIntoView({ behavior: 'smooth' });
+                });
+            });
+
+            // Nav jump: reveal all sections up to and including target
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    const targetIdx = parseInt(link.getAttribute('data-target'));
+                    // Unhide all sections up to target
+                    for (let i = 0; i <= targetIdx; i++) {
+                        wrappers[i].classList.remove('hidden');
+                        // Hide continue buttons for sections we're skipping past
+                        if (i < targetIdx) {
+                            const pb = wrappers[i].querySelector('.page-break');
+                            if (pb) pb.style.display = 'none';
+                        }
+                    }
+                    // Scroll to target
+                    wrappers[targetIdx].scrollIntoView({ behavior: 'smooth' });
+                    // Close sidebar
+                    navSidebar.classList.remove('open');
+                    navToggle.textContent = '☰';
+                    navToggle.style.left = '0';
+                    // Highlight active
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+                });
+            });
+
+            // Quiz Logic (per question block)
+            document.querySelectorAll('.quiz-question-block').forEach(questionBlock => {
+                const opts = questionBlock.querySelectorAll('.quiz-opt');
+                const feedback = questionBlock.querySelector('.quiz-feedback');
+
+                opts.forEach(opt => {
+                    const answerQuestion = () => {
+                        if (questionBlock.classList.contains('answered')) return;
+                        questionBlock.classList.add('answered');
+                        opt.classList.add('selected');
+                        const isCorrect = opt.getAttribute('data-correct') === 'true';
+
+                        if (isCorrect) {
+                            opt.classList.add('correct');
+                            feedback.querySelector('.feedback-correct').classList.remove('hidden');
+                        } else {
+                            opt.classList.add('incorrect');
+                            feedback.querySelector('.feedback-incorrect').classList.remove('hidden');
+                            const correctOpt = questionBlock.querySelector('.quiz-opt[data-correct="true"]');
+                            if (correctOpt) correctOpt.classList.add('correct');
+                        }
+
+                        feedback.classList.remove('hidden');
+                    };
+
+                    opt.addEventListener('click', answerQuestion);
+                    opt.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            answerQuestion();
+                        }
+                    });
+                });
+            });
+
+            // Accordion Logic
+            document.querySelectorAll('.accordion-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const content = header.nextElementSibling;
+                    const icon = header.querySelector('.accordion-toggle-icon');
+                    const isHidden = content.classList.contains('hidden');
+                    content.classList.toggle('hidden');
+                    icon.textContent = isHidden ? '−' : '+';
+                });
+            });
+        });
+
+        // Highlight.js
+        document.querySelectorAll('.syntax-strip pre code').forEach(el => {
+            hljs.highlightElement(el);
+        });
+    </script></p>
+<p>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon="{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;b856efea05a540eb867e568e2588268c&quot;,&quot;r&quot;:1,&quot;spa&quot;:2}" crossorigin="anonymous"></script>
+</p></body></html>

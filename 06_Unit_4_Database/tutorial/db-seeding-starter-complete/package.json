@@ -1,0 +1,24 @@
+{
+  "name": "db-seeding-starter-complete",
+  "version": "1.0.0",
+  "description": "Your goal: build the `npm run db` command that creates SQLite tables and seeds them with the sample data, using Drizzle ORM. Follow the lesson.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon index.js",
+    "db": "node src/db/seed.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@libsql/client": "^0.18.0",
+    "drizzle-orm": "^0.45.4",
+    "express": "^5.3.0"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.11",
+    "nodemon": "^3.1.14"
+  }
+}

@@ -1,0 +1,1695 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Databases and Drizzle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&amp;family=Syne:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/vs2015.min.css">
+    <style>
+        :root {
+            --bg: #F5F2EB;
+            --ink: #1a1a18;
+            --ink2: #4a4a46;
+            --ink3: #8a8a84;
+            --accent: #D45C2A;
+            --border: #D6D0C4;
+            --card: #FDFAF5;
+            --blue-light: #DDE9F7;
+            --blue: #1E5FA8;
+            --yellow-light: #FDF5D4;
+            --yellow: #C69A00;
+            --mono: 'Roboto Mono', monospace;
+            --head: 'Syne', sans-serif;
+            --body: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--ink); font-family: var(--body); line-height: 1.6; }
+        
+        .header { background: #1a1a18; color: #FDFAF5; padding: 3rem; position: relative; overflow: hidden; }
+        .header-meta { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #7a7a74; margin-bottom: 12px; }
+        .header h1 { font-family: var(--head); font-size: 42px; font-weight: 800; line-height: 1.1; margin-bottom: 14px; }
+        .header-sub { font-size: 15px; color: #b0b0a8; max-width: 560px; white-space: pre-wrap; }
+
+        .container { max-width: 860px; margin: 0 auto; padding: 48px; }
+
+        .phase-header { display: flex; align-items: center; gap: 14px; margin: 44px 0 18px; }
+        .phase-pill { font-family: var(--mono); font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 4px 12px; border-radius: 3px; }
+        .pill-guided { background: var(--blue-light); color: var(--blue); }
+        .pill-solo { background: #DFF0E8; color: #2A7D4F; }
+        .pill-query { background: #EEE6F7; color: #6B3FA0; }
+        
+        .phase-line { flex: 1; height: 1px; background: var(--border); }
+        .phase-title { font-family: var(--head); font-size: 13px; font-weight: 700; color: var(--ink3); line-height: 1.5; padding-bottom: 2px; }
+
+        .task-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+        .task-header { display: flex; padding: 22px 28px; border-bottom: 1px solid var(--border); gap: 16px; }
+        .task-number { font-family: var(--head); font-size: 32px; font-weight: 800; color: var(--blue); opacity: 0.3; line-height: 1.2; }
+        .task-title { font-family: var(--head); font-size: 19px; font-weight: 700; line-height: 1.4; padding-bottom: 2px; }
+        .task-subtitle { font-size: 13px; color: var(--ink3); line-height: 1.4; white-space: pre-wrap; }
+        .task-body { padding: 22px 28px; }
+        .task-body p { font-size: 14px; color: var(--ink2); margin-bottom: 14px; }
+        .task-body ul, .task-body p ul { padding-left: 32px !important; margin-bottom: 16px; list-style-type: disc !important; }
+        .task-body ol, .task-body p ol { padding-left: 32px !important; margin-bottom: 16px; list-style-type: decimal !important; }
+        .task-body li { margin-bottom: 8px; font-size: 14px; color: var(--ink2); display: list-item !important; }
+
+        /* ASCII Block */
+        .ascii-container { margin: 24px 0; text-align: center; }
+        .ascii-art { font-family: var(--mono); font-size: 12px; line-height: 1.5; background: var(--bg); color: var(--ink); padding: 20px; border-radius: 8px; border: 1px solid var(--border); overflow-x: auto; text-align: left; white-space: pre; margin: 0; }
+        .ascii-caption { margin-top: 12px; font-size: 13.5px; color: var(--ink3); font-style: italic; }
+
+        .page-break { display: flex; justify-content: center; padding: 2rem 0; margin-top: 2rem; }
+        .continue-btn { background: var(--accent); color: white; border: none; padding: 0.75rem 2rem; border-radius: 2rem; font-family: var(--head); font-weight: 700; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 14px rgba(212,92,42,0.3); transition: all 0.2s; }
+        .continue-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(212,92,42,0.4); }
+
+        .quiz-container { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 24px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .quiz-question-block + .quiz-question-block { margin-top: 20px; padding-top: 18px; border-top: 1px dashed var(--border); }
+        .quiz-question { font-family: var(--head); font-weight: 700; font-size: 17px; margin-bottom: 20px; color: var(--ink); }
+        .quiz-options { display: flex; flex-direction: column; gap: 12px; }
+        .quiz-opt { display: block; width: 100%; box-sizing: border-box; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; text-align: left; font-family: var(--body); font-size: 15px; line-height: 1.5; cursor: pointer; transition: all 0.2s; }
+        .quiz-opt:hover { background: #f3f4f6; border-color: #d1d5db; }
+        .quiz-opt.selected { border-color: var(--ink); background: #f3f4f6; font-weight: 600; }
+        .quiz-opt.correct { background: #ecfdf5 !important; border-color: #10b981 !important; color: #065f46 !important; }
+        .quiz-opt.incorrect { background: #fef2f2 !important; border-color: #ef4444 !important; color: #991b1b !important; }
+        .quiz-opt p, .quiz-opt ul, .quiz-opt ol { margin-top: 0; margin-bottom: 0; }
+        .quiz-opt p + p, .quiz-opt p + ul, .quiz-opt p + ol, .quiz-opt ul + p, .quiz-opt ol + p { margin-top: 8px; }
+        .quiz-question code, .quiz-opt code { font-family: var(--mono); background: #eceae4; padding: 1px 5px; border-radius: 3px; font-size: 0.85em; display: inline; vertical-align: baseline; }
+        .quiz-feedback { margin-top: 24px; font-size: 14.5px; line-height: 1.5; }
+        .feedback-correct { background: #d1fae5; color: #065f46; padding: 16px; border-radius: 8px; }
+        .feedback-incorrect { background: #fee2e2; color: #991b1b; padding: 16px; border-radius: 8px; }
+
+        .accordion-list { margin: 24px 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+        .accordion-item { border-bottom: 1px solid var(--border); }
+        .accordion-item:last-child { border-bottom: none; }
+        .accordion-header { width: 100%; padding: 16px 20px; display: flex; align-items: center; gap: 12px; background: white; border: none; text-align: left; font-family: var(--head); font-weight: 700; font-size: 15px; cursor: pointer; color: var(--ink); }
+        .accordion-toggle-icon { color: var(--accent); font-family: var(--mono); font-size: 18px; width: 16px; }
+        .accordion-content { padding: 16px 20px 24px; background: #fafafa; font-size: 15px; line-height: 1.6; color: var(--ink2); border-top: 1px solid #f3f4f6; }
+
+        .comparison-table-wrapper { margin: 24px 0; overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
+        .comparison-table { width: 100%; border-collapse: collapse; background: white; }
+        .comparison-table th { background: #f8f9fa; padding: 16px; text-align: left; font-family: var(--head); font-size: 14px; color: var(--ink3); border-bottom: 1px solid var(--border); }
+        .comparison-table td { padding: 16px; font-size: 14px; line-height: 1.5; border-bottom: 1px solid #f3f4f6; width: 50%; }
+        .comparison-table tr td:first-child { border-right: 1px solid #f3f4f6; font-weight: 600; }
+
+        .syntax-strip { background: #1e1e1e; border-radius: 8px; padding: 0; margin: 14px 0; color: #d4d4d4; font-family: var(--mono); font-size: 12.5px; overflow: hidden; position: relative; }
+        .syntax-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 16px 0; }
+        .code-filename { font-family: var(--mono); font-size: 10px; color: #9cdcfe; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .syntax-lang { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: #6a9955; margin-left: auto; }
+        .syntax-strip pre { margin: 0; padding: 12px 16px 16px; overflow-x: auto; }
+        .syntax-strip pre code { background: none !important; padding: 0 !important; color: inherit; font-size: 12.5px; line-height: 1.8; }
+        .syntax-strip .hljs { background: transparent !important; padding: 0 !important; }
+        .hint-box { display: flex; gap: 12px; padding: 13px 16px; border-radius: 8px; margin: 12px 0; border-left: 3px solid; }
+        .hint-box.blue { background: var(--blue-light); border-color: var(--blue); }
+        .hint-box.yellow { background: var(--yellow-light); border-color: var(--yellow); }
+        .hint-box p { font-size: 13px; margin: 0; }
+
+        .steps-container { display: flex; flex-direction: column; gap: 16px; margin: 24px 0; }
+        .step-item { display: flex; gap: 16px; align-items: flex-start; }
+        .step-badge { font-family: var(--mono); font-size: 11px; width: 26px; height: 26px; background: var(--blue-light); color: var(--blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 700; }
+        .step-content { flex: 1; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+
+        code { font-family: var(--mono); background: #ECEAE4; padding: 1px 5px; border-radius: 3px; font-size: 12.5px; display: inline; }
+        .method-pill { font-family: var(--mono); font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 4px; background: #E6EDFA; color: var(--blue); }
+
+        .hidden { display: none !important; }
+        .section-wrapper.hidden { display: none; }
+
+        /* Navigation Sidebar */
+        .nav-toggle { position: fixed; top: 50%; left: 0; transform: translateY(-50%); z-index: 1000; background: var(--accent); color: white; border: none; width: 48px; height: 56px; border-radius: 0 12px 12px 0; font-size: 22px; cursor: pointer; box-shadow: 4px 0 16px rgba(212,92,42,0.45); display: flex; align-items: center; justify-content: center; transition: width 0.2s, box-shadow 0.2s; }
+        .nav-toggle:hover { width: 56px; box-shadow: 6px 0 20px rgba(212,92,42,0.6); }
+        .nav-sidebar { position: fixed; top: 0; left: -320px; width: 300px; height: 100vh; background: white; border-right: 1px solid var(--border); z-index: 999; transition: left 0.3s ease; overflow-y: auto; padding: 24px 20px 20px; box-shadow: 4px 0 20px rgba(0,0,0,0.1); }
+        .nav-sidebar.open { left: 0; }
+        .nav-sidebar h3 { font-family: var(--head); font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink3); margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+        .nav-link { display: flex; align-items: center; padding: 10px 14px; margin-bottom: 4px; border-radius: 6px; font-family: var(--body); font-size: 13px; color: var(--ink2); text-decoration: none; cursor: pointer; border: none; background: none; width: 100%; text-align: left; transition: all 0.15s; }
+        .nav-link:hover { background: var(--bg); color: var(--ink); }
+        .nav-link.active { background: #fde8dc; color: var(--accent); font-weight: 600; border-left: 3px solid var(--accent); }
+        .nav-link .nav-num { font-family: var(--mono); font-size: 10px; color: var(--ink3); margin-right: 10px; flex-shrink: 0; }
+    </style>
+</head><body><p><button class="nav-toggle" id="navToggle">☰</button></p>
+<div class="nav-sidebar" id="navSidebar">
+<h3>Sections</h3>
+<button class="nav-link" data-target="0"><span class="nav-num">01</span>The Big Picture: Layer by Layer</button><button class="nav-link" data-target="1"><span class="nav-num">02</span>Defining Tables: The Drizzle Schema</button><button class="nav-link" data-target="2"><span class="nav-num">03</span>Setting Up Your Project</button><button class="nav-link" data-target="3"><span class="nav-num">04</span>Drizzle ↔ SQL: Side by Side</button><button class="nav-link" data-target="4"><span class="nav-num">05</span>Building and Following Your First Endpoint</button><button class="nav-link" data-target="5"><span class="nav-num">06</span>Full CRUD in the Controller</button><button class="nav-link" data-target="6"><span class="nav-num">07</span>Common Patterns Reference</button><button class="nav-link" data-target="7"><span class="nav-num">08</span>Check Your Understanding</button></div>
+<div class="header">
+<div class="header-meta">practical 4</div>
+<h1>Databases and Drizzle</h1>
+<p class="header-sub">Tracing the full journey from HTTP request through Routes, Controllers, Drizzle ORM, and into raw SQL and back again.</p>
+</div>
+<div class="container">
+<div class="section-wrapper" id="section-0">
+<div class="phase-header">
+<div class="phase-pill pill-guided">📖 Concept</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 1 of 8</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">01</div>
+<div class="task-title-block">
+<div class="task-title">The Big Picture: Layer by Layer</div>
+<div class="task-subtitle">How an Express.js server handles a request end-to-end</div>
+</div>
+</div>
+<div class="task-body">
+<p>Modern backend applications are built in <b>layers</b>. Each layer has a single, clear responsibility. When a client (browser, mobile app, Postman) sends a request, it travels through all these layers before a response is returned.</p>
+<div class="ascii-container">
+<pre class="ascii-art">  [ Client / Browser ]
+         |
+         |  HTTP Request (e.g. GET /todos)
+         v
+  +------------------+
+  |    Route Layer   |  Receives the URL, decides who handles it
+  +------------------+
+         |
+         v
+  +------------------+
+  | Controller Layer |  Reads request data, runs the queries, sends the response
+  +------------------+
+         |
+         v
+  +------------------+
+  |   Drizzle ORM    |  Builds and executes type-safe SQL queries
+  +------------------+
+         |
+         v
+  +------------------+
+  | SQLite / libsql  |  The actual database file on disk
+  +------------------+
+         |
+         |  Data travels back up through each layer
+         v
+  [ Client receives JSON response ]</pre>
+<p class="ascii-caption">Full request/response flow in an Express + Drizzle application</p>
+</div>
+<p>Each layer has one job:<br><br><b>Route</b> — Matches the URL and HTTP method, delegates to a controller.<br><b>Controller</b> — Extracts params/body from the request, runs the Drizzle queries, sends the response with the correct status code.<br><b>Drizzle ORM</b> — Translates JavaScript method calls into SQL statements.<br><b>Database</b> — Executes the SQL and returns rows.</p>
+<div class="quiz-container" id="quiz-b1-4">
+<div class="quiz-question-block" data-question-index="0">
+<div class="quiz-question">Q1. A controller receives <code>req.params.id = 5</code> and needs to fetch a to-do from the database. Whose job is it to write the SQL query?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">The controller writes SQL directly</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">The Route parses the SQL from the URL</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="true" tabindex="0">Drizzle ORM generates the SQL from JavaScript method calls</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">The database generates its own queries</div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Correct! Drizzle ORM is the layer that converts JavaScript calls like <code>.select().from(todos).where(eq(todos.id, 5))</code> into the actual SQL that the database runs.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>Not quite. Drizzle ORM sits between your application code and the database, translating JavaScript method calls into raw SQL statements automatically.</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-1">
+<div class="phase-header">
+<div class="phase-pill pill-guided">📖 Concept</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 2 of 8</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">02</div>
+<div class="task-title-block">
+<div class="task-title">Defining Tables: The Drizzle Schema</div>
+<div class="task-subtitle">Primary keys, foreign keys, and how relationships are expressed in code</div>
+</div>
+</div>
+<div class="task-body">
+<p>In Drizzle, you define your tables in a <b>schema file</b> using JavaScript. This schema describes the structure of your database: the tables, their columns, and the relationships between them.<br><br><b>Do not create any files yet.</b> Read this section to understand what each line does. You will be told exactly when to create <code>src/db/schema.js</code> and type this in — that is in Section 3.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">// src/db/schema.js
+import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core';
+
+export const users = sqliteTable('users', {
+  id:        integer('id').primaryKey({ autoIncrement: true }),
+  username:  text('username').notNull().unique(),
+  email:     text('email').notNull().unique(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+});
+
+// One-to-many: one user can have many todos
+export const todos = sqliteTable('todos', {
+  id:        integer('id').primaryKey({ autoIncrement: true }),
+  userId:    integer('user_id').notNull().references(() =&gt; users.id),
+  title:     text('title').notNull(),
+  completed: integer('completed', { mode: 'boolean' }).notNull().default(false),
+  dueDate:   integer('due_date', { mode: 'timestamp' }),
+});
+
+// One-to-one: one user has exactly one profile
+export const userProfiles = sqliteTable('user_profiles', {
+  id:        integer('id').primaryKey({ autoIncrement: true }),
+  userId:    integer('user_id').notNull().unique().references(() =&gt; users.id),
+  bio:       text('bio'),
+  avatarUrl: text('avatar_url'),
+});</code></pre>
+</div>
+<p><b>Primary Keys</b><br><br>Every table should have a <b>primary key</b> — a column that uniquely identifies each row. No two rows can share the same primary key value, and it can never be NULL. In Drizzle you declare it with <code>.primaryKey()</code>.<br><br>The <code>autoIncrement: true</code> option tells the database to automatically assign the next available integer when a new row is inserted. This means you never supply an <code>id</code> manually — the database handles it.<br><br>Drizzle: <code>integer('id').primaryKey({ autoIncrement: true })</code><br>SQL: <code>id INTEGER PRIMARY KEY AUTOINCREMENT</code></p>
+<div class="ascii-container">
+<pre class="ascii-art"> You insert two rows without specifying id:
+
+  db.insert(todos).values({ userId: 1, title: 'Buy groceries', completed: false });
+  db.insert(todos).values({ userId: 1, title: 'Finish report',  completed: false });
+
+  The database assigns ids automatically:
+  +----+---------+---------------+-----------+
+  | id | user_id | title         | completed |
+  +----+---------+---------------+-----------+
+  |  1 |    1    | Buy groceries |     0     |  &lt;-- id = 1 (first row ever inserted)
+  |  2 |    1    | Finish report |     0     |  &lt;-- id = 2 (next available)
+  +----+---------+---------------+-----------+</pre>
+<p class="ascii-caption">autoIncrement: you never supply the id — the database assigns the next integer automatically</p>
+</div>
+<p><b>Foreign Keys and Relationships</b><br><br>A <b>foreign key</b> is a column whose value must match a primary key in another table. It is how you link rows across tables and encode relationships. In Drizzle you declare one with <code>.references(() =&gt; targetTable.column)</code>.<br><br>The arrow function syntax (<code>() =&gt;</code>) is required so Drizzle can resolve the reference even if the target table is defined later in the same file — this avoids circular reference errors in JavaScript.</p>
+<div class="comparison-table-wrapper">
+<table class="comparison-table">
+<thead>
+<tr>
+<th>One-to-Many</th>
+<th>One-to-One</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>One user can have <b>many</b> to-dos.</td>
+<td>One user has <b>exactly one</b> profile.</td>
+</tr>
+<tr>
+<td>The foreign key has <b>no</b> unique constraint — the same <code>user_id</code> can appear in many rows.</td>
+<td>The foreign key has <code>.unique()</code> — no two rows can share the same <code>user_id</code>.</td>
+</tr>
+<tr>
+<td><code>userId: integer('user_id')<br>&nbsp;&nbsp;.notNull()<br>&nbsp;&nbsp;.references(() =&gt; users.id)</code></td>
+<td><code>userId: integer('user_id')<br>&nbsp;&nbsp;.notNull()<br>&nbsp;&nbsp;<b>.unique()</b><br>&nbsp;&nbsp;.references(() =&gt; users.id)</code></td>
+</tr>
+<tr>
+<td>SQL: <code>user_id INTEGER NOT NULL REFERENCES users(id)</code></td>
+<td>SQL: <code>user_id INTEGER NOT NULL UNIQUE REFERENCES users(id)</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="ascii-container">
+<pre class="ascii-art"> ONE-TO-MANY  (users -&gt; todos)
+
+  users                     todos
+  +----+----------+         +----+---------+---------------+
+  | id | username |         | id | user_id | title         |
+  +----+----------+         +----+---------+---------------+
+  |  1 | alice    |&lt;---+--- |  1 |    1    | Buy groceries |
+  |  2 | bob      |    +--- |  2 |    1    | Finish report |
+  +----+----------+    +--- |  3 |    1    | Call dentist  |
+                            |  4 |    2    | Read a book   |
+                            +----+---------+---------------+
+  The same user_id can repeat many times -- no UNIQUE constraint.
+
+
+ ONE-TO-ONE  (users -&gt; user_profiles)
+
+  users                     user_profiles
+  +----+----------+         +----+---------+------------------+
+  | id | username |         | id | user_id | bio              |
+  +----+----------+         +----+---------+------------------+
+  |  1 | alice    |&lt;------- |  1 |    1    | Loves coding     |
+  |  2 | bob      |&lt;------- |  2 |    2    | Enjoys hiking    |
+  +----+----------+         +----+---------+------------------+
+  user_id has UNIQUE -- each value can only appear once.</pre>
+<p class="ascii-caption">The only difference in Drizzle between 1-to-many and 1-to-1 is .unique() on the foreign key</p>
+</div>
+<div class="hint-box blue"><span class="hint-icon">💡</span>
+<p>The foreign key always lives on the table that represents the <b>"many"</b> side (or the dependent side in a 1-to-1). A to-do <i>belongs to</i> a user, so <code>user_id</code> is on the <code>todos</code> table — not on <code>users</code>.</p>
+</div>
+<p><b>You never write the SQL below, and you should not type it anywhere.</b> This is the SQL that <code>drizzle-kit push</code> generates from your schema and runs against the database for you. It is shown here only so you can see exactly what each Drizzle option produces:</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">-- Generated SQL
+CREATE TABLE users (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  username   TEXT NOT NULL UNIQUE,
+  email      TEXT NOT NULL UNIQUE,
+  created_at INTEGER NOT NULL
+);
+
+-- One-to-many: no UNIQUE on user_id
+CREATE TABLE todos (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    INTEGER NOT NULL REFERENCES users(id),
+  title      TEXT NOT NULL,
+  completed  INTEGER NOT NULL DEFAULT 0,
+  due_date   INTEGER
+);
+
+-- One-to-one: UNIQUE on user_id prevents duplicates
+CREATE TABLE user_profiles (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    INTEGER NOT NULL UNIQUE REFERENCES users(id),
+  bio        TEXT,
+  avatar_url TEXT
+);</code></pre>
+</div>
+<div class="quiz-container" id="quiz-b2-8">
+<div class="quiz-question-block" data-question-index="0">
+<div class="quiz-question">Q1. You are modelling a school system where each student has exactly one student card. Which Drizzle snippet correctly represents the student card's foreign key?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0"><code>studentId: integer('student_id').notNull().references(() =&gt; students.id)</code></div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="true" tabindex="0"><code>studentId: integer('student_id').notNull().unique().references(() =&gt; students.id)</code></div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0"><code>studentId: integer('student_id').primaryKey().references(() =&gt; students.id)</code></div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0"><code>studentId: text('student_id').notNull().references(() =&gt; students.id)</code></div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Correct! Because it is a 1-to-1 relationship, the foreign key needs <code>.unique()</code> to ensure no two student cards can belong to the same student.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>Not quite. A 1-to-1 relationship requires <code>.unique()</code> on the foreign key column. Without it, multiple student cards could reference the same student — making it a 1-to-many relationship instead.</div>
+</div>
+</div>
+</div>
+</div>
+<div class="quiz-container" id="quiz-b2-9">
+<div class="quiz-question-block" data-question-index="0">
+<div class="quiz-question">Q1. You insert a new to-do without providing an <code>id</code> value. What happens?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">Drizzle throws an error because id is required</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">The row is inserted with id = 0 by default</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="true" tabindex="0">The database automatically assigns the next available integer as the id</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">The id column is left as NULL</div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Correct! <code>autoIncrement: true</code> means the database tracks the last used id and assigns the next integer automatically every time a row is inserted.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>Because <code>id</code> is declared with <code>autoIncrement: true</code>, the database assigns it automatically. You never need to (or should) supply it yourself when inserting a new row.</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-2">
+<div class="phase-header">
+<div class="phase-pill pill-solo">★ Do-it-yourself</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 3 of 8</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">03</div>
+<div class="task-title-block">
+<div class="task-title">Setting Up Your Project</div>
+<div class="task-subtitle">Follow every step in order, from an empty folder to a running server</div>
+</div>
+</div>
+<div class="task-body">
+<p>In this section you will build the project you will use for the rest of this topic. <b>Do every step below, in order.</b> Each step tells you exactly which file to create, where to put it, and what to type into it.<br><br>By the end of this section you will have a running Express server connected to a SQLite database with your three tables created and some test data inside. You will not write any route or controller code yet — that comes in Section 5.</p>
+<div class="hint-box yellow"><span class="hint-icon">⚠️</span>
+<p>Every command in this section must be run from inside the <code>todo-api</code> folder, using the VS Code terminal (<b>Terminal &gt; New Terminal</b>). If you run them from <code>repos</code> or from inside <code>src</code>, you will end up with files and a database in the wrong place.</p>
+</div>
+<div class="steps-container">
+<div class="step-item">
+<div class="step-badge">1</div>
+<div class="step-content"><b>Create the project folder.</b> Inside your <code>repos</code> folder, create a new folder called <code>todo-api</code>. Open that folder in VS Code (<b>File &gt; Open Folder</b>). Do not open <code>repos</code> itself.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">2</div>
+<div class="step-content"><b>Initialise the project.</b> In the VS Code terminal, run <code>npm init -y</code>. This creates <code>package.json</code>.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">3</div>
+<div class="step-content"><b>Edit <code>package.json</code>.</b> Add the two lines shown in the next code block: <code>"type": "module"</code> and the <code>dev</code> script. Save the file.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">4</div>
+<div class="step-content"><b>Install the runtime packages.</b> Run <code>npm install express drizzle-orm @libsql/client</code></div>
+</div>
+<div class="step-item">
+<div class="step-badge">5</div>
+<div class="step-content"><b>Install the Drizzle CLI.</b> Run <code>npm install -D drizzle-kit</code></div>
+</div>
+<div class="step-item">
+<div class="step-badge">6</div>
+<div class="step-content"><b>Create the folders.</b> Inside <code>todo-api</code>, create a folder called <code>src</code>. Inside <code>src</code>, create three folders: <code>db</code>, <code>controllers</code>, and <code>routes</code>. They will be empty for now.</div>
+</div>
+</div>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">// package.json  (for the package.json step above)
+// Add the two highlighted lines to the file npm init created.
+{
+  "name": "todo-api",
+  "version": "1.0.0",
+  "type": "module",                          // &lt;-- ADD THIS
+  "scripts": {
+    "dev": "node --watch src/index.js"       // &lt;-- ADD THIS
+  }
+}</code></pre>
+</div>
+<p><b>Why these two lines matter</b><br><code>"type": "module"</code> — Without it, every <code>import</code> statement in this topic fails with <code>Cannot use import statement outside a module</code>.<br><code>"dev"</code> script — Lets you start the server with <code>npm run dev</code>. The <code>--watch</code> flag restarts it automatically whenever you save a file, so you never have to stop and start it by hand.</p>
+<div class="steps-container">
+<div class="step-item">
+<div class="step-badge">1</div>
+<div class="step-content"><b>Create <code>src/db/schema.js</code></b> and type in the full schema from Section 2 (the <code>users</code>, <code>todos</code> and <code>userProfiles</code> tables). Scroll back up to copy it if you need to.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">2</div>
+<div class="step-content"><b>Create <code>src/db/connection.js</code></b> and type in the code block directly below this step.</div>
+</div>
+</div>
+<p><b>What <code>connection.js</code> is for.</b> Before you can run any query, you need a Drizzle <b>client</b> — an open connection to the database. You create it once in this file and export it, so every controller in the project imports the same connection instead of opening its own.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">// src/db/connection.js  (create this file now)
+import { drizzle } from 'drizzle-orm/libsql';
+import { createClient } from '@libsql/client';
+import * as schema from './schema.js';
+
+const client = createClient({
+  url: process.env.DATABASE_URL ?? 'file:./todos.db',
+});
+
+export const db = drizzle(client, { schema });</code></pre>
+</div>
+<p>Line by line:<br><code>createClient({ url: 'file:./todos.db' })</code> — Opens the SQLite file, creating it if it does not exist yet.<br><code>drizzle(client, { schema })</code> — Wraps that client with Drizzle's query builder and tells it about your tables.<br><code>export const db</code> — This is the object you will call <code>.select()</code>, <code>.insert()</code>, <code>.update()</code> and <code>.delete()</code> on in every controller.</p>
+<div class="steps-container">
+<div class="step-item">
+<div class="step-badge">1</div>
+<div class="step-content"><b>Create <code>drizzle.config.js</code></b> in the <code>todo-api</code> root — next to <code>package.json</code>, <b>not</b> inside <code>src</code>. Type in the code block below.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">2</div>
+<div class="step-content"><b>Create your tables.</b> Run <code>npx drizzle-kit push</code>. If it asks you to confirm, answer <b>Yes</b>. When it finishes, check that a file called <code>todos.db</code> has appeared in the <code>todo-api</code> root. If it has not, stop and fix this before continuing.</div>
+</div>
+</div>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">// drizzle.config.js  (create this in the todo-api root, next to package.json)
+import { defineConfig } from 'drizzle-kit';
+
+export default defineConfig({
+  schema:    './src/db/schema.js',
+  dialect:   'sqlite',
+  dbCredentials: {
+    url: process.env.DATABASE_URL ?? 'file:./todos.db',
+  },
+});</code></pre>
+</div>
+<div class="hint-box blue"><span class="hint-icon">💡</span>
+<p><code>drizzle-kit push</code> compares your <code>src/db/schema.js</code> against the actual database and applies whatever changes are needed — <code>CREATE TABLE</code> for new tables, <code>ALTER TABLE</code> for new columns. <b>Every time you change your schema from now on, run <code>npx drizzle-kit push</code> again.</b> Nothing happens to the database until you do.</p>
+</div>
+<div class="hint-box yellow"><span class="hint-icon">⚠️</span>
+<p><code>file:./todos.db</code> is resolved from <b>wherever you run the command</b>, not from where the file sits. If you <code>cd</code> into <code>src</code> and run your server from there, Node will quietly create a second, empty <code>todos.db</code> inside <code>src</code> and all your tables will appear to have vanished. Always run <code>npm run dev</code> and <code>npx drizzle-kit push</code> from the <code>todo-api</code> root.</p>
+</div>
+<div class="steps-container">
+<div class="step-item">
+<div class="step-badge">1</div>
+<div class="step-content"><b>Create <code>src/db/seed.js</code></b> and type in the code block below.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">2</div>
+<div class="step-content"><b>Run it once:</b> <code>node src/db/seed.js</code>. You should see <code>Seed data inserted.</code> printed in the terminal.</div>
+</div>
+</div>
+<p><b>Why you need this.</b> Your tables exist but they are empty. Because <code>todos.user_id</code> is a foreign key that must match a real row in <code>users</code>, you cannot create a single to-do until at least one user exists. This file inserts one user and two to-dos so you have something to query in Section 5.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">// src/db/seed.js  (create this file now)
+import { db } from './connection.js';
+import { users, todos } from './schema.js';
+
+// Insert one user. We do not supply an id -- autoIncrement gives it id 1.
+const [alice] = await db
+  .insert(users)
+  .values({
+    username:  'alice',
+    email:     '<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e2838e8b8187a2879a838f928e87cc818d8f">[email&nbsp;protected]</a>',
+    createdAt: new Date(),
+  })
+  .returning();
+
+// Insert two to-dos belonging to that user.
+await db.insert(todos).values([
+  { userId: alice.id, title: 'Buy groceries', completed: false },
+  { userId: alice.id, title: 'Finish report', completed: true  },
+]);
+
+console.log('Seed data inserted.');</code></pre>
+</div>
+<div class="hint-box yellow"><span class="hint-icon">⚠️</span>
+<p>Run <code>node src/db/seed.js</code> <b>once only</b>. Running it a second time will fail with a <code>UNIQUE constraint failed: users.email</code> error, because a user with that email already exists. That error is expected — it is not a bug in your code.</p>
+</div>
+<div class="steps-container">
+<div class="step-item">
+<div class="step-badge">1</div>
+<div class="step-content"><b>Create <code>src/index.js</code></b> and type in the code block below. This is the entry point of your server.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">2</div>
+<div class="step-content"><b>Start the server:</b> run <code>npm run dev</code>. You should see <code>Server running on http://localhost:3000</code>.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">3</div>
+<div class="step-content"><b>Check it works.</b> Open <code>http://localhost:3000</code> in your browser. You should see <code>{"message":"Todo API is running"}</code>. Leave the server running — it restarts by itself every time you save a file.</div>
+</div>
+</div>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">// src/index.js  (create this file now)
+import express from 'express';
+
+const app  = express();
+const PORT = 3000;
+
+// Lets Express read JSON bodies into req.body on POST and PATCH requests.
+app.use(express.json());
+
+// A temporary health check so you can confirm the server is alive.
+app.get('/', (req, res) =&gt; {
+  return res.status(200).json({ message: 'Todo API is running' });
+});
+
+app.listen(PORT, () =&gt; {
+  console.log(`Server running on http://localhost:${PORT}`);
+});</code></pre>
+</div>
+<div class="hint-box blue"><span class="hint-icon">💡</span>
+<p>Do not leave out <code>app.use(express.json())</code>. Without that one line, <code>req.body</code> is <code>undefined</code> in every controller, and your POST and PATCH handlers in Section 6 will fail with <code>Cannot destructure property 'title' of 'req.body'</code>. It is the single most common reason a working-looking POST endpoint returns a 400.</p>
+</div>
+<div class="ascii-container">
+<pre class="ascii-art"> Your project should now look exactly like this
+
+ repos/                            &lt;-- Where all your code repositories live
+ └── todo-api/                     &lt;-- The folder you create first
+     ├── node_modules/             &lt;-- Created by npm install, never edit
+     ├── src/
+     │   ├── db/
+     │   │   ├── connection.js     &lt;-- The Drizzle client
+     │   │   ├── schema.js         &lt;-- Your table definitions
+     │   │   └── seed.js           &lt;-- Run once to add test data
+     │   ├── controllers/          &lt;-- Empty for now, filled in Section 5
+     │   ├── routes/               &lt;-- Empty for now, filled in Section 5
+     │   └── index.js              &lt;-- Express entry point
+     ├── drizzle.config.js         &lt;-- Drizzle-kit config
+     ├── package.json              &lt;-- Needs "type": "module"
+     └── todos.db                  &lt;-- Created by drizzle-kit push</pre>
+<p class="ascii-caption">Compare your folder against this before moving on to Section 4</p>
+</div>
+<p><b>Checkpoint — do not continue until all four are true:</b><br>1. <code>todos.db</code> exists in the <code>todo-api</code> root.<br>2. <code>node src/db/seed.js</code> printed <code>Seed data inserted.</code><br>3. <code>npm run dev</code> printed <code>Server running on http://localhost:3000</code>.<br>4. Opening <code>http://localhost:3000</code> in your browser shows <code>{"message":"Todo API is running"}</code>.<br><br>If any of these fail, fix it now. Every later section builds directly on top of this.</p>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-3">
+<div class="phase-header">
+<div class="phase-pill pill-query">🔍 Deep Dive</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 4 of 8</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">04</div>
+<div class="task-title-block">
+<div class="task-title">Drizzle ↔ SQL: Side by Side</div>
+<div class="task-subtitle">Every Drizzle method call translates to a specific SQL statement</div>
+</div>
+</div>
+<div class="task-body">
+<p>Drizzle is not magic — it is a <b>query builder</b>. Every method you chain eventually produces a SQL string that gets sent to the database.<br><br><b>Nothing in this section is to be typed into a file.</b> Read it once to see the pattern, then treat it as a lookup table you come back to while writing your controllers in Section 5 and Section 6.</p>
+<p><b>SELECT — Fetch all rows</b></p>
+<div class="comparison-table-wrapper">
+<table class="comparison-table">
+<thead>
+<tr>
+<th>Drizzle (JavaScript)</th>
+<th>Generated SQL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>db.select().from(todos)</code></td>
+<td><code>SELECT * FROM todos</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><b>SELECT — Specific columns only</b></p>
+<div class="comparison-table-wrapper">
+<table class="comparison-table">
+<thead>
+<tr>
+<th>Drizzle (JavaScript)</th>
+<th>Generated SQL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>db.select({<br>&nbsp;&nbsp;id: todos.id,<br>&nbsp;&nbsp;title: todos.title<br>}).from(todos)</code></td>
+<td><code>SELECT id, title<br>FROM todos</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><b>SELECT — With a WHERE filter</b></p>
+<div class="comparison-table-wrapper">
+<table class="comparison-table">
+<thead>
+<tr>
+<th>Drizzle (JavaScript)</th>
+<th>Generated SQL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>db.select().from(todos)<br>.where(eq(todos.userId, 1))</code></td>
+<td><code>SELECT * FROM todos<br>WHERE user_id = 1</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><b>INSERT — Add a new row</b></p>
+<div class="comparison-table-wrapper">
+<table class="comparison-table">
+<thead>
+<tr>
+<th>Drizzle (JavaScript)</th>
+<th>Generated SQL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>db.insert(todos).values({<br>&nbsp;&nbsp;userId: 1,<br>&nbsp;&nbsp;title: 'Buy groceries',<br>&nbsp;&nbsp;completed: false<br>}).returning()</code></td>
+<td><code>INSERT INTO todos<br>(user_id, title, completed)<br>VALUES (1, 'Buy groceries', 0)<br>RETURNING *</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><b>UPDATE — Modify existing rows</b></p>
+<div class="comparison-table-wrapper">
+<table class="comparison-table">
+<thead>
+<tr>
+<th>Drizzle (JavaScript)</th>
+<th>Generated SQL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>db.update(todos)<br>.set({ completed: true })<br>.where(eq(todos.id, 1))<br>.returning()</code></td>
+<td><code>UPDATE todos<br>SET completed = 1<br>WHERE id = 1<br>RETURNING *</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><b>DELETE — Remove rows</b></p>
+<div class="comparison-table-wrapper">
+<table class="comparison-table">
+<thead>
+<tr>
+<th>Drizzle (JavaScript)</th>
+<th>Generated SQL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>db.delete(todos)<br>.where(eq(todos.id, 1))</code></td>
+<td><code>DELETE FROM todos<br>WHERE id = 1</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><b>JOIN — Combine data from two tables</b></p>
+<div class="comparison-table-wrapper">
+<table class="comparison-table">
+<thead>
+<tr>
+<th>Drizzle (JavaScript)</th>
+<th>Generated SQL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>db.select({<br>&nbsp;&nbsp;owner: users.username,<br>&nbsp;&nbsp;task: todos.title<br>})<br>.from(todos)<br>.innerJoin(users,<br>&nbsp;&nbsp;eq(todos.userId, users.id))</code></td>
+<td><code>SELECT users.username,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;todos.title<br>FROM todos<br>INNER JOIN users<br>&nbsp;&nbsp;ON todos.user_id = users.id</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="hint-box yellow"><span class="hint-icon">⚠️</span>
+<p>Always include a <code>.where()</code> clause on <code>UPDATE</code> and <code>DELETE</code> statements. Without one, Drizzle will update or delete <b>every row</b> in the table — there is no confirmation prompt.</p>
+</div>
+<p><b>Common filter operators</b> — import these from <code>drizzle-orm</code>:</p>
+<div class="accordion-list">
+<div class="accordion-item"><button class="accordion-header"><span class="accordion-toggle-icon">+</span>eq(col, value) — Equal to (=)</button>
+<div class="accordion-content hidden">SQL: <code>WHERE id = 1</code><br>Drizzle: <code>.where(eq(todos.id, 1))</code></div>
+</div>
+<div class="accordion-item"><button class="accordion-header"><span class="accordion-toggle-icon">+</span>ne(col, value) — Not equal to (!=)</button>
+<div class="accordion-content hidden">SQL: <code>WHERE completed != 1</code><br>Drizzle: <code>.where(ne(todos.completed, true))</code></div>
+</div>
+<div class="accordion-item"><button class="accordion-header"><span class="accordion-toggle-icon">+</span>gt / gte / lt / lte — Numeric comparisons</button>
+<div class="accordion-content hidden">SQL: <code>WHERE id &gt; 5</code><br>Drizzle: <code>.where(gt(todos.id, 5))</code><br><br>SQL: <code>WHERE due_date &lt;= 1700000000</code><br>Drizzle: <code>.where(lte(todos.dueDate, timestamp))</code></div>
+</div>
+<div class="accordion-item"><button class="accordion-header"><span class="accordion-toggle-icon">+</span>and(...) — All conditions must be true</button>
+<div class="accordion-content hidden">SQL: <code>WHERE user_id = 1 AND completed = 0</code><br>Drizzle: <code>.where(and(eq(todos.userId, 1), eq(todos.completed, false)))</code></div>
+</div>
+<div class="accordion-item"><button class="accordion-header"><span class="accordion-toggle-icon">+</span>or(...) — At least one condition must be true</button>
+<div class="accordion-content hidden">SQL: <code>WHERE title = 'Shopping' OR title = 'Laundry'</code><br>Drizzle: <code>.where(or(eq(todos.title, 'Shopping'), eq(todos.title, 'Laundry')))</code></div>
+</div>
+<div class="accordion-item"><button class="accordion-header"><span class="accordion-toggle-icon">+</span>like(col, pattern) — Pattern matching</button>
+<div class="accordion-content hidden">SQL: <code>WHERE title LIKE 'Buy%'</code> (starts with 'Buy')<br>Drizzle: <code>.where(like(todos.title, 'Buy%'))</code><br><br><code>%</code> matches any sequence of characters. <code>_</code> matches exactly one character.</div>
+</div>
+<div class="accordion-item"><button class="accordion-header"><span class="accordion-toggle-icon">+</span>isNull(col) / isNotNull(col) — NULL checks</button>
+<div class="accordion-content hidden">SQL: <code>WHERE due_date IS NULL</code><br>Drizzle: <code>.where(isNull(todos.dueDate))</code></div>
+</div>
+</div>
+<div class="quiz-container" id="quiz-b4-19">
+<div class="quiz-question-block" data-question-index="0">
+<div class="quiz-question">Q1. You want to fetch all incomplete to-dos that belong to user 2. Which Drizzle call is correct?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0"><code>db.select().from(todos).where(eq(todos.userId, 2), eq(todos.completed, false))</code></div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="true" tabindex="0"><code>db.select().from(todos).where(and(eq(todos.userId, 2), eq(todos.completed, false)))</code></div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0"><code>db.select().from(todos).filter(userId == 2 &amp;&amp; completed == false)</code></div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0"><code>db.select().from(todos).where(eq(todos.userId, 2)).where(eq(todos.completed, false))</code></div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Correct! Use <code>and()</code> to combine multiple conditions inside a single <code>.where()</code> call. It maps to SQL's <code>WHERE user_id = 2 AND completed = 0</code>.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>Not quite. To combine multiple conditions, wrap them in <code>and(...)</code>: <code>.where(and(eq(todos.userId, 2), eq(todos.completed, false)))</code>. Chaining two <code>.where()</code> calls or passing multiple arguments directly won't work as expected.</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-4">
+<div class="phase-header">
+<div class="phase-pill pill-solo">★ Do-it-yourself</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 5 of 8</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">05</div>
+<div class="task-title-block">
+<div class="task-title">Building and Following Your First Endpoint</div>
+<div class="task-subtitle">Create the route and controller, then trace the request from client to SQL and back</div>
+</div>
+</div>
+<div class="task-body">
+<p>You will now build your first real endpoint: <b>GET /users/1/todos</b>, which returns all to-dos belonging to user 1.<br><br><b>In this section you will create two files and edit one:</b><br>1. Create <code>src/routes/todoRoutes.js</code><br>2. Create <code>src/controllers/todoController.js</code><br>3. Edit <code>src/index.js</code> to register the router<br><br>After that you will test the endpoint in your browser, then trace exactly what happened at each layer.</p>
+<p><b>Stage 1 — The Route</b><br>The router receives the HTTP request and hands it to the correct controller function. It does nothing else: no database access, no logic, no validation.<br><br><b>Do this now:</b> create <code>src/routes/todoRoutes.js</code> and type in the code below.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">// src/routes/todoRoutes.js
+import express from 'express';
+import { getTodosByUser } from '../controllers/todoController.js';
+
+const router = express.Router();
+
+// GET /users/:userId/todos
+router.get('/users/:userId/todos', getTodosByUser);
+
+export default router;</code></pre>
+</div>
+<p>The route's only job is to map <code>GET /users/:userId/todos</code> to the <code>getTodosByUser</code> function. It does <b>not</b> touch the database or contain any logic.<br><br>Your editor will show an error on the import line until you create the controller in the next stage. That is expected — carry on.</p>
+<p><b>Stage 2 — The Controller</b><br>The controller extracts data from the request, validates it, runs the Drizzle query, and sends the HTTP response with an explicit status code.<br><br><b>Do this now:</b> create <code>src/controllers/todoController.js</code> and type in the code below. You will add more handlers to this same file in Section 6, so leave it open.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">// src/controllers/todoController.js
+import { db } from '../db/connection.js';
+import { todos } from '../db/schema.js';
+import { eq } from 'drizzle-orm';
+
+export async function getTodosByUser(req, res) {
+  const userId = parseInt(req.params.userId);
+
+  if (isNaN(userId)) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+
+  const result = await db
+    .select()
+    .from(todos)
+    .where(eq(todos.userId, userId));
+
+  return res.status(200).json(result);
+}</code></pre>
+</div>
+<p>The controller does three things in order:<br>1. <b>Validates</b> the input (<code>parseInt</code> + NaN check).<br>2. <b>Queries</b> the database via Drizzle.<br>3. <b>Responds</b> with an explicit status code and JSON.</p>
+<div class="hint-box blue"><span class="hint-icon">💡</span>
+<p>Always write <code>res.status(...).json(...)</code> rather than a bare <code>res.json(...)</code>. Express defaults to <code>200</code> when you omit the status, which means a success and an error can look identical in your code. Stating the status explicitly makes the intent of every response obvious to whoever reads the controller next — including your marker.</p>
+</div>
+<div class="accordion-list">
+<div class="accordion-item"><button class="accordion-header"><span class="accordion-toggle-icon">+</span>200 OK — a successful GET, PUT or PATCH</button>
+<div class="accordion-content hidden"><code>return res.status(200).json(result);</code><br>The request succeeded and the body contains the requested or updated data.</div>
+</div>
+<div class="accordion-item"><button class="accordion-header"><span class="accordion-toggle-icon">+</span>201 Created — a successful POST</button>
+<div class="accordion-content hidden"><code>return res.status(201).json(newTodo);</code><br>A new row was created. Send back the created row (this is where <code>.returning()</code> earns its keep).</div>
+</div>
+<div class="accordion-item"><button class="accordion-header"><span class="accordion-toggle-icon">+</span>400 Bad Request — the client sent invalid input</button>
+<div class="accordion-content hidden"><code>return res.status(400).json({ error: 'Invalid user ID' });</code><br>Failed validation: a non-numeric id, a missing required field, a malformed body.</div>
+</div>
+<div class="accordion-item"><button class="accordion-header"><span class="accordion-toggle-icon">+</span>404 Not Found — the row does not exist</button>
+<div class="accordion-content hidden"><code>return res.status(404).json({ error: 'To-do not found' });</code><br>The id was valid, but no matching row came back from the query.</div>
+</div>
+<div class="accordion-item"><button class="accordion-header"><span class="accordion-toggle-icon">+</span>500 Internal Server Error — something broke on your side</button>
+<div class="accordion-content hidden"><code>return res.status(500).json({ error: 'Internal server error' });</code><br>Used inside a <code>catch</code> block when the database or your own code throws.</div>
+</div>
+</div>
+<div class="hint-box blue"><span class="hint-icon">💡</span>
+<p>Always validate and sanitize <code>req.params</code> and <code>req.body</code> before passing values to a query. URL parameters arrive as strings, and a user could send anything — including <code>NaN</code>, negative numbers, or malicious input.</p>
+</div>
+<p><b>Stage 3 — Register the router</b><br>Creating the route file is not enough. Express does not know it exists until you attach it to the app with <code>app.use()</code>.<br><br><b>Do this now:</b> open <code>src/index.js</code> and add the two marked lines. Do not retype the whole file — just add these two lines to what is already there.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">// src/index.js  (edit the file you already created)
+import express from 'express';
+import todoRoutes from './routes/todoRoutes.js';   // &lt;-- ADD THIS
+
+const app  = express();
+const PORT = 3000;
+
+app.use(express.json());
+
+app.get('/', (req, res) =&gt; {
+  return res.status(200).json({ message: 'Todo API is running' });
+});
+
+app.use(todoRoutes);                               // &lt;-- ADD THIS
+
+app.listen(PORT, () =&gt; {
+  console.log(`Server running on http://localhost:${PORT}`);
+});</code></pre>
+</div>
+<div class="steps-container">
+<div class="step-item">
+<div class="step-badge">1</div>
+<div class="step-content"><b>Save all three files.</b> If <code>npm run dev</code> is still running it restarts by itself. If not, run it again from the <code>todo-api</code> root.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">2</div>
+<div class="step-content"><b>Test the happy path.</b> Open <code>http://localhost:3000/users/1/todos</code> in your browser. You should see the two to-dos your seed file inserted.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">3</div>
+<div class="step-content"><b>Test the error path.</b> Open <code>http://localhost:3000/users/abc/todos</code>. You should see <code>{"error":"Invalid user ID"}</code> — and if you check the Network tab in DevTools, the status is <b>400</b>, not 200.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">4</div>
+<div class="step-content"><b>Test an empty result.</b> Open <code>http://localhost:3000/users/99/todos</code>. You should see an empty array <code>[]</code> with status 200. User 99 does not exist, but an empty list is still a valid answer to "list this user's to-dos".</div>
+</div>
+</div>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">// Expected response from GET http://localhost:3000/users/1/todos
+[
+  { "id": 1, "userId": 1, "title": "Buy groceries", "completed": false, "dueDate": null },
+  { "id": 2, "userId": 1, "title": "Finish report",  "completed": true,  "dueDate": null }
+]</code></pre>
+</div>
+<div class="hint-box yellow"><span class="hint-icon">⚠️</span>
+<p><b>If you get an empty array when you expected two rows</b>, you almost certainly have two database files. Check whether a second <code>todos.db</code> has appeared inside <code>src</code>. Delete it, and make sure you are running <code>npm run dev</code> from the <code>todo-api</code> root.<br><br><b>If you get <code>Cannot GET /users/1/todos</code></b>, you have not added <code>app.use(todoRoutes)</code> to <code>src/index.js</code>.</p>
+</div>
+<p><b>Now trace what just happened.</b> Nothing below is to be typed — this is a walkthrough of the request you have already made, layer by layer.</p>
+<p><b>Stage 4 — Drizzle builds and sends the SQL</b><br>When <code>await db.select().from(todos).where(eq(todos.userId, userId))</code> executes, Drizzle compiles it to:</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">-- SQL executed against the database
+SELECT * FROM todos WHERE user_id = 1;</code></pre>
+</div>
+<p><b>Stage 5 — The database returns rows</b><br>SQLite (via libsql) runs the query and returns an array of matching rows. Drizzle automatically maps the snake_case column names back to the camelCase field names defined in your schema.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">// What Drizzle returns as JavaScript objects
+[
+  { id: 1, userId: 1, title: 'Buy groceries', completed: false, dueDate: null },
+  { id: 2, userId: 1, title: 'Finish report',  completed: true,  dueDate: 1700000000 },
+]</code></pre>
+</div>
+<p><b>Stage 6 — The response travels back up</b><br>The array returns from Drizzle to the controller. The controller calls <code>res.status(200).json(result)</code>. Express serialises it to JSON and sends an HTTP 200 response to the browser — which is exactly what you saw.</p>
+<div class="ascii-container">
+<pre class="ascii-art">Client: GET /users/1/todos
+        |
+        v
+   [ Route ]        matches /users/:userId/todos
+        |
+        v
+   [ Controller ]   validates userId (parseInt, NaN check)
+        |
+        v
+   [ Drizzle ]      builds SQL: SELECT * FROM todos WHERE user_id = 1
+        |
+        v
+   [ SQLite/libsql ] executes query, returns 2 raw rows
+        |
+        ^ (response travels back up)
+        |
+   [ Drizzle ]      maps rows to JS objects (snake_case -&gt; camelCase)
+        |
+   [ Controller ]   res.status(200).json(result)
+        |
+   [ Client ]  &lt;--- HTTP 200  +  JSON array</pre>
+<p class="ascii-caption">The complete request/response lifecycle for GET /users/1/todos</p>
+</div>
+<div class="quiz-container" id="quiz-b5-17">
+<div class="quiz-question-block" data-question-index="0">
+<div class="quiz-question">Q1. In the controller, why do we call <code>parseInt(req.params.userId)</code> instead of using the value directly?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">Because Drizzle requires integer parameters to be explicitly typed</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="true" tabindex="0">Because URL parameters are always strings, and we need a number for the database comparison</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">Because Express won't compile otherwise</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">To prevent CORS errors</div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Correct! Express provides all URL parameters as strings. Even if the URL is <code>/users/1/todos</code>, <code>req.params.userId</code> is the string <code>'1'</code>, not the number <code>1</code>. <code>parseInt()</code> converts it.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>Not quite. Express provides all <code>req.params</code> values as strings — so <code>req.params.userId</code> is <code>'1'</code> (string), not <code>1</code> (number). We call <code>parseInt()</code> to convert it to the number the database column expects.</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-5">
+<div class="phase-header">
+<div class="phase-pill pill-solo">★ Do-it-yourself</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 6 of 8</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">06</div>
+<div class="task-title-block">
+<div class="task-title">Full CRUD in the Controller</div>
+<div class="task-subtitle">Add the remaining four handlers, wire their routes, and test every one</div>
+</div>
+</div>
+<div class="task-body">
+<p>You already have one handler, <code>getTodosByUser</code>. You will now add four more to the <b>same</b> <code>src/controllers/todoController.js</code> file, then add a route for each one.<br><br>Every handler follows the same three-step shape: <b>validate</b> the incoming data, <b>query</b> the database, then <b>respond</b> with an explicit status code.</p>
+<p><b>Do this now:</b> open <code>src/controllers/todoController.js</code> and add the handler below <b>underneath</b> your existing <code>getTodosByUser</code>. Do not delete anything, and do not change the import lines at the top — this handler uses <code>eq</code>, which you already import.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">// src/controllers/todoController.js
+// ADD this below your existing getTodosByUser function.
+
+// GET /todos/:id
+export async function getTodoById(req, res) {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    return res.status(400).json({ error: 'Invalid to-do ID' });
+  }
+
+  const [todo] = await db
+    .select()
+    .from(todos)
+    .where(eq(todos.id, id));
+
+  if (!todo) {
+    return res.status(404).json({ error: 'To-do not found' });
+  }
+
+  return res.status(200).json(todo);
+}</code></pre>
+</div>
+<p>Notice the destructuring in <code>const [todo] = await db.select()...</code>. Drizzle <b>always</b> returns an array, even when only one row matches. Destructuring the first element gives you the object directly, and if nothing matched, <code>todo</code> is <code>undefined</code> — which is exactly what the 404 check tests for.</p>
+<p><b>Do this now:</b> add these three handlers to the bottom of the same file, below <code>getTodoById</code>.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">// src/controllers/todoController.js
+// ADD these three below getTodoById.
+
+// POST /users/:userId/todos
+export async function addTodo(req, res) {
+  const userId = parseInt(req.params.userId);
+  const { title, dueDate } = req.body;
+
+  if (isNaN(userId)) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+  if (!title) {
+    return res.status(400).json({ error: 'Title is required' });
+  }
+
+  const [newTodo] = await db
+    .insert(todos)
+    .values({ userId, title, dueDate, completed: false })
+    .returning();
+
+  return res.status(201).json(newTodo);
+}
+
+// PATCH /todos/:id
+export async function markComplete(req, res) {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    return res.status(400).json({ error: 'Invalid to-do ID' });
+  }
+
+  const [updated] = await db
+    .update(todos)
+    .set({ completed: true })
+    .where(eq(todos.id, id))
+    .returning();
+
+  if (!updated) {
+    return res.status(404).json({ error: 'To-do not found' });
+  }
+
+  return res.status(200).json(updated);
+}
+
+// DELETE /todos/:id
+export async function deleteTodo(req, res) {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    return res.status(400).json({ error: 'Invalid to-do ID' });
+  }
+
+  const [deleted] = await db
+    .delete(todos)
+    .where(eq(todos.id, id))
+    .returning();
+
+  if (!deleted) {
+    return res.status(404).json({ error: 'To-do not found' });
+  }
+
+  return res.status(200).json({ message: 'To-do deleted', id: deleted.id });
+}</code></pre>
+</div>
+<div class="hint-box blue"><span class="hint-icon">💡</span>
+<p>Notice <code>.returning()</code> at the end of the INSERT, UPDATE and DELETE calls. This appends <code>RETURNING *</code> to the SQL, telling the database to send back the affected row(s) — very useful for confirming what was created or modified, for getting the auto-generated <code>id</code>, and for detecting that <b>nothing</b> matched so you can respond with a 404.</p>
+</div>
+<div class="hint-box yellow"><span class="hint-icon">⚠️</span>
+<p>Use <code>return</code> in front of every <code>res.status(...).json(...)</code>. Without it, execution continues past the validation check and Express will try to send a second response — throwing <code>Cannot set headers after they are sent to the client</code>.</p>
+</div>
+<p><b>Do this now:</b> your four new handlers cannot be reached until each has a route. Open <code>src/routes/todoRoutes.js</code> and <b>replace its entire contents</b> with the code below.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">// src/routes/todoRoutes.js  (REPLACE the whole file with this)
+import express from 'express';
+import {
+  getTodosByUser,
+  getTodoById,
+  addTodo,
+  markComplete,
+  deleteTodo,
+} from '../controllers/todoController.js';
+
+const router = express.Router();
+
+router.get('/users/:userId/todos',  getTodosByUser);
+router.post('/users/:userId/todos', addTodo);
+
+router.get('/todos/:id',    getTodoById);
+router.patch('/todos/:id',  markComplete);
+router.delete('/todos/:id', deleteTodo);
+
+export default router;</code></pre>
+</div>
+<p><b>Now test all five endpoints.</b> A browser can only send GET requests, so you need Postman, Thunder Client (a VS Code extension), or <code>curl</code> in the terminal to test POST, PATCH and DELETE. The <code>curl</code> commands are given below — run each one in a <b>second</b> terminal, leaving <code>npm run dev</code> running in the first.</p>
+<div class="steps-container">
+<div class="step-item">
+<div class="step-badge">1</div>
+<div class="step-content"><b>Create a to-do.</b> Run the POST command below. Expect status <b>201</b> and the new row in the response, with an <code>id</code> the database assigned.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">2</div>
+<div class="step-content"><b>Fetch that to-do.</b> Run the GET command using the <code>id</code> you just got back. Expect status <b>200</b> and the same row.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">3</div>
+<div class="step-content"><b>Mark it complete.</b> Run the PATCH command. Expect status <b>200</b> and <code>"completed": true</code>.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">4</div>
+<div class="step-content"><b>Delete it.</b> Run the DELETE command. Expect status <b>200</b> and the confirmation message.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">5</div>
+<div class="step-content"><b>Prove the 404 works.</b> Run the GET command again for the id you just deleted. Expect status <b>404</b> and <code>{"error":"To-do not found"}</code>.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">6</div>
+<div class="step-content"><b>Prove the 400 works.</b> Run <code>curl -i http://localhost:3000/todos/abc</code>. Expect status <b>400</b> and <code>{"error":"Invalid to-do ID"}</code>.</div>
+</div>
+</div>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript"># Run these in a SECOND terminal. The -i flag prints the status line so you
+# can check the status code, not just the body.
+
+# 1. CREATE -- expect 201
+curl -i -X POST http://localhost:3000/users/1/todos \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Call the dentist"}'
+
+# 2. READ ONE -- replace 3 with the id returned above, expect 200
+curl -i http://localhost:3000/todos/3
+
+# 3. UPDATE -- expect 200 and "completed": true
+curl -i -X PATCH http://localhost:3000/todos/3
+
+# 4. DELETE -- expect 200
+curl -i -X DELETE http://localhost:3000/todos/3
+
+# 5. READ THE DELETED ROW AGAIN -- expect 404
+curl -i http://localhost:3000/todos/3
+
+# 6. INVALID ID -- expect 400
+curl -i http://localhost:3000/todos/abc</code></pre>
+</div>
+<div class="hint-box yellow"><span class="hint-icon">⚠️</span>
+<p>If your POST returns <code>{"error":"Title is required"}</code> even though you sent a title, check two things: that <code>app.use(express.json())</code> is in <code>src/index.js</code>, and that your request sets the header <code>Content-Type: application/json</code>. Without either one, <code>req.body</code> arrives empty and <code>title</code> is <code>undefined</code>.</p>
+</div>
+<p><b>Handling errors</b><br>Any database call can throw — a broken foreign key, a unique constraint violation, a corrupted file. Wrap the query in <code>try/catch</code> so an unexpected failure returns a clean 500 instead of crashing the server.</p>
+<div class="hint-box yellow"><span class="hint-icon">⚠️</span>
+<p><b>Do this now:</b> the code below is a rewritten version of <code>addTodo</code>. <b>Replace</b> your existing <code>addTodo</code> function with it — do not paste it in as a second copy. Two functions with the same name in one file is a syntax error.</p>
+</div>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">// src/controllers/todoController.js
+// REPLACE your existing addTodo with this version.
+
+export async function addTodo(req, res) {
+  const userId = parseInt(req.params.userId);
+  const { title, dueDate } = req.body;
+
+  if (isNaN(userId)) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+  if (!title) {
+    return res.status(400).json({ error: 'Title is required' });
+  }
+
+  try {
+    const [newTodo] = await db
+      .insert(todos)
+      .values({ userId, title, dueDate, completed: false })
+      .returning();
+
+    return res.status(201).json(newTodo);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}</code></pre>
+</div>
+<p><b>Your turn.</b> Apply the same <code>try/catch</code> pattern to the other four handlers in your controller yourself. Every one of them talks to the database, so every one of them can throw.</p>
+<p><b>Checkpoint — do not continue until all six are true:</b><br>1. POST returns <b>201</b> with the created row.<br>2. GET one returns <b>200</b> with that row.<br>3. PATCH returns <b>200</b> with <code>completed: true</code>.<br>4. DELETE returns <b>200</b> with the confirmation message.<br>5. Fetching a deleted id returns <b>404</b>.<br>6. Fetching <code>/todos/abc</code> returns <b>400</b>.</p>
+<div class="quiz-container" id="quiz-b6-9">
+<div class="quiz-question-block" data-question-index="0">
+<div class="quiz-question">Q1. Your <code>addTodo</code> controller successfully inserts a new row. Which response is correct?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0"><code>res.json(newTodo)</code></div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0"><code>res.status(200).json(newTodo)</code></div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="true" tabindex="0"><code>res.status(201).json(newTodo)</code></div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0"><code>res.status(400).json(newTodo)</code></div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Correct! <code>201 Created</code> is the status for a successful POST that creates a new resource, and the body carries the newly created row from <code>.returning()</code>.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>A successful creation should return <code>201 Created</code>, not <code>200</code>. And always set the status explicitly — a bare <code>res.json()</code> silently defaults to 200, which hides the intent of the response.</div>
+</div>
+</div>
+</div>
+</div>
+<div class="quiz-container" id="quiz-b6-10">
+<div class="quiz-question-block" data-question-index="0">
+<div class="quiz-question">Q1. A client sends <code>GET /todos/9999</code> but no to-do with that id exists. <code>const [todo] = await db.select()...</code> leaves <code>todo</code> as <code>undefined</code>. What should the controller send?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0"><code>res.status(200).json([])</code> — an empty array</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="true" tabindex="0"><code>res.status(404).json({ error: 'To-do not found' })</code></div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0"><code>res.status(400).json({ error: 'Invalid to-do ID' })</code></div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0"><code>res.status(500).json({ error: 'Query failed' })</code></div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Correct! The id was well-formed, so it isn't a 400, and nothing broke, so it isn't a 500. The resource simply does not exist — that is exactly what <code>404 Not Found</code> means.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>The id was a valid number, so it isn't a 400, and no error was thrown, so it isn't a 500. When a single resource is requested and it doesn't exist, the correct answer is <code>404 Not Found</code>.</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-6">
+<div class="phase-header">
+<div class="phase-pill pill-query">🔍 Deep Dive</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 7 of 8</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">07</div>
+<div class="task-title-block">
+<div class="task-title">Common Patterns Reference</div>
+<div class="task-subtitle">Reference material for CA1 and CA2 - read now, come back to it later</div>
+</div>
+</div>
+<div class="task-body">
+<p><b>Nothing in this section needs to be typed into your project right now.</b> Your <code>todo-api</code> is already complete and working. These are the patterns you will reach for in CA1 and CA2, collected here so you know they exist and where to find them.<br><br>Each snippet below is a <b>fragment</b> meant to sit inside a controller function you have already written. Do not paste one into a file on its own — it will not run.</p>
+<p><b>Pagination</b> — Limit results and skip a number of rows. Essential for any list endpoint.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">// A complete handler, for GET /todos?page=2&amp;limit=10
+export async function listTodos(req, res) {
+  const page   = parseInt(req.query.page)  || 1;
+  const limit  = parseInt(req.query.limit) || 10;
+  const offset = (page - 1) * limit;
+
+  const result = await db
+    .select()
+    .from(todos)
+    .limit(limit)
+    .offset(offset);
+  // SQL: SELECT * FROM todos LIMIT 10 OFFSET 10;
+
+  return res.status(200).json(result);
+}</code></pre>
+</div>
+<p><b>Order By</b> — Sort results. Import <code>asc</code> and <code>desc</code> from <code>drizzle-orm</code>. The snippet below is a fragment: the query goes inside a handler.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">import { asc, desc } from 'drizzle-orm';
+
+// Incomplete to-dos first, then alphabetical by title
+const result = await db
+  .select()
+  .from(todos)
+  .orderBy(asc(todos.completed), asc(todos.title));
+// SQL: SELECT * FROM todos ORDER BY completed ASC, title ASC;</code></pre>
+</div>
+<p><b>Aggregates</b> — Count rows and group results.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">import { count } from 'drizzle-orm';
+
+// Total number of to-dos
+const [{ total }] = await db
+  .select({ total: count() })
+  .from(todos);
+// SQL: SELECT COUNT(*) AS total FROM todos;
+
+// Count of to-dos per user
+const counts = await db
+  .select({
+    userId: todos.userId,
+    total:  count(),
+  })
+  .from(todos)
+  .groupBy(todos.userId);
+// SQL: SELECT user_id, COUNT(*) AS total
+//      FROM todos GROUP BY user_id;</code></pre>
+</div>
+<p><b>Upsert</b> — Insert a row, or update it if a conflict on a unique column occurs. This fragment assumes you have imported <code>users</code> from your schema.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">await db
+  .insert(users)
+  .values({ username: 'alice', email: '<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c0a1aca9a3a580a5b8a1adb0aca5eea3afad">[email&nbsp;protected]</a>', createdAt: new Date() })
+  .onConflictDoUpdate({
+    target: users.email,                  // the conflicting column
+    set: { username: 'alice_updated' },   // what to update instead
+  });
+// SQL: INSERT INTO users (username, email, created_at)
+//      VALUES ('alice', '<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="1475787d777154716c75796478713a777b79">[email&nbsp;protected]</a>', ...)
+//      ON CONFLICT(email) DO UPDATE SET username = 'alice_updated';</code></pre>
+</div>
+<p><b>Transactions</b> — Group multiple queries so they all succeed or all fail together (atomicity).</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">// Create a new user and their profile — atomically
+export async function register(req, res) {
+  const { username, email } = req.body;
+
+  if (!username || !email) {
+    return res.status(400).json({ error: 'Username and email are required' });
+  }
+
+  try {
+    const newUser = await db.transaction(async (tx) =&gt; {
+      const [user] = await tx
+        .insert(users)
+        .values({ username, email, createdAt: new Date() })
+        .returning();
+
+      await tx
+        .insert(userProfiles)
+        .values({ userId: user.id, bio: '', avatarUrl: null });
+
+      return user;
+    });
+
+    return res.status(201).json(newUser);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Registration failed' });
+  }
+}
+// If either INSERT fails, both are rolled back automatically.</code></pre>
+</div>
+<div class="hint-box blue"><span class="hint-icon">💡</span>
+<p>Use transactions whenever two or more database operations must succeed or fail together. Registration is a classic example: creating the <code>users</code> row and the <code>user_profiles</code> row must both succeed, or neither should.</p>
+</div>
+<div class="quiz-container" id="quiz-b7-12">
+<div class="quiz-question-block" data-question-index="0">
+<div class="quiz-question">Q1. Your registration endpoint creates a new user row, then creates their profile row. The server crashes after the user is inserted but before the profile is inserted. What happens if these are NOT wrapped in a transaction?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">Both operations roll back automatically</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">The database retries the profile insert on the next request</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="true" tabindex="0">A user exists with no profile — any code that assumes every user has a profile will now break</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">Express buffers both operations and completes them on restart</div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Correct! Without a transaction, the user row is permanently committed. A crash before the profile insert leaves a user with no profile row — any query that joins users to profiles will return broken or missing data for that account.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>Without a transaction there is no automatic rollback or retry. The first INSERT commits immediately. A crash before the second INSERT leaves a user row with no matching profile — a broken state that will cause real bugs in any code that assumes the two always exist together.</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-7">
+<div class="phase-header">
+<div class="phase-pill pill-guided">❓ Check Your Understanding</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 8 of 8</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">08</div>
+<div class="task-title-block">
+<div class="task-title">Check Your Understanding</div>
+<div class="task-subtitle">Put it all together</div>
+</div>
+</div>
+<div class="task-body">
+<div class="quiz-container" id="quiz-b8-1">
+<div class="quiz-question-block" data-question-index="0">
+<div class="quiz-question">Q1. Which file should you edit to add a new column to an existing table in a Drizzle project?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">The controller file</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">The route file</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="true" tabindex="0">The schema file, then run <code>npx drizzle-kit push</code></div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">Directly edit the SQLite database file with a SQL client</div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Correct! Always modify <code>src/db/schema.js</code> first, then run <code>npx drizzle-kit push</code> to apply the change to the database. Your schema file stays the single source of truth.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>Drizzle manages your database structure through the schema file. Edit <code>src/db/schema.js</code> and run <code>npx drizzle-kit push</code>. Editing the database file directly bypasses version control and will conflict with your schema definition.</div>
+</div>
+</div>
+</div>
+</div>
+<div class="quiz-container" id="quiz-b8-2">
+<div class="quiz-question-block" data-question-index="0">
+<div class="quiz-question">Q1. What does <code>.returning()</code> do when appended to an INSERT or UPDATE in Drizzle?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">It sends the data back to the client automatically via <code>res.status(200).json()</code></div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="true" tabindex="0">It returns the affected row(s) as JavaScript objects after the operation completes</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">It rolls back the operation if it fails</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">It prevents duplicate rows from being inserted</div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Correct! <code>.returning()</code> appends <code>RETURNING *</code> to the SQL statement, causing the database to send back the inserted or updated row(s), which Drizzle maps to JavaScript objects.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>Not quite. <code>.returning()</code> maps to SQL's <code>RETURNING *</code> clause. It tells the database to send back the affected rows — you still need to call <code>res.status(...).json(...)</code> yourself in the controller.</div>
+</div>
+</div>
+</div>
+</div>
+<div class="quiz-container" id="quiz-b8-3">
+<div class="quiz-question-block" data-question-index="0">
+<div class="quiz-question">Q1. What SQL does <code>db.select().from(todos).where(eq(todos.completed, false)).orderBy(asc(todos.title))</code> produce?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="true" tabindex="0"><code>SELECT * FROM todos WHERE completed = 0 ORDER BY title ASC</code></div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0"><code>SELECT * FROM todos WHERE completed = 1 ORDER BY title DESC</code></div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0"><code>SELECT title FROM todos ORDER BY title WHERE completed = 0</code></div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0"><code>UPDATE todos SET completed = 0 ORDER BY title</code></div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Correct! SQLite stores booleans as integers, so <code>false</code> becomes <code>0</code>. <code>eq()</code> maps to <code>=</code>, and <code>asc()</code> produces <code>ORDER BY title ASC</code>.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>The correct SQL is <code>SELECT * FROM todos WHERE completed = 0 ORDER BY title ASC</code>. SQLite stores booleans as integers (<code>false = 0</code>, <code>true = 1</code>), and <code>asc()</code> produces ascending order.</div>
+</div>
+</div>
+</div>
+</div>
+<div class="quiz-container" id="quiz-b8-4">
+<div class="quiz-question-block" data-question-index="0">
+<div class="quiz-question">Q1. You need to delete all completed to-dos for user 3. Which Drizzle call is correct?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="true" tabindex="0"><code>db.delete(todos).where(and(eq(todos.userId, 3), eq(todos.completed, true)))</code></div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0"><code>db.remove(todos).where(userId === 3 &amp;&amp; completed === true)</code></div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0"><code>db.delete().from(todos).userId(3).completed(true)</code></div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0"><code>db.todos.delete({ userId: 3, completed: true })</code></div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Correct! <code>db.delete(table).where(condition)</code> is the standard Drizzle DELETE pattern. Combining two conditions requires wrapping them in <code>and()</code>.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>Drizzle uses <code>db.delete(table).where(condition)</code>. There is no <code>.remove()</code> method, and JavaScript operators like <code>===</code> or <code>&amp;&amp;</code> cannot be used inside Drizzle's filter functions.</div>
+</div>
+</div>
+</div>
+</div>
+<div class="quiz-container" id="quiz-b8-5">
+<div class="quiz-question-block" data-question-index="0">
+<div class="quiz-question">Q1. A route is defined as <code>router.get('/users/:id/todos', getTodosByUser)</code>. A request arrives for <code>GET /users/abc/todos</code>. What should the controller do first?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">Pass <code>req.params.id</code> directly to Drizzle</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="true" tabindex="0">Check that <code>req.params.id</code> is a valid number, and return <code>res.status(400).json(...)</code> if it isn't</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">Send a 500 error immediately</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">Let Drizzle validate and reject the input</div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Correct! <code>req.params.id</code> will be the string <code>'abc'</code>. The controller must validate it with <code>parseInt</code> and a NaN check, then respond <code>400 Bad Request</code> if it fails. Drizzle does not validate input for you.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div>URL parameters are always strings and are never validated automatically. The controller must confirm <code>req.params.id</code> is a valid number, or the query may behave unexpectedly. A <code>400 Bad Request</code> is the appropriate response for invalid input.</div>
+</div>
+</div>
+</div>
+</div>
+<div class="quiz-container" id="quiz-b8-6">
+<div class="quiz-question-block" data-question-index="0">
+<div class="quiz-question">Q1. Why should you write <code>return res.status(200).json(result)</code> instead of just <code>res.json(result)</code>?</div>
+<div class="quiz-options">
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0"><code>res.json()</code> does not work in Express 5</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="true" tabindex="0">The status makes the intent explicit, and <code>return</code> stops execution so you never send two responses</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0"><code>res.status()</code> is required for JSON serialisation to work</div>
+<div class="quiz-opt" role="button" data-question-index="0" data-correct="false" tabindex="0">It makes the query run faster</div>
+</div>
+<div class="quiz-feedback hidden">
+<div class="feedback-correct hidden"><strong>Correct!</strong>
+<div>Correct! Express defaults to 200 when the status is omitted, which makes a success and an error look identical in your code. Stating it explicitly documents the intent, and <code>return</code> prevents the dreaded <code>Cannot set headers after they are sent</code> error.</div>
+</div>
+<div class="feedback-incorrect hidden"><strong>Not quite.</strong>
+<div><code>res.json()</code> does work — it just silently defaults to status 200, which hides your intent and makes error paths easy to get wrong. Setting the status explicitly and returning early is the safer, clearer habit.</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+</p>
+<p><script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const wrappers = document.querySelectorAll('.section-wrapper');
+            const navLinks = document.querySelectorAll('.nav-link');
+            const navToggle = document.getElementById('navToggle');
+            const navSidebar = document.getElementById('navSidebar');
+
+            // Toggle nav sidebar
+            navToggle.addEventListener('click', () => {
+                navSidebar.classList.toggle('open');
+                navToggle.textContent = navSidebar.classList.contains('open') ? '✕' : '☰';
+                navToggle.style.left = navSidebar.classList.contains('open') ? '300px' : '0';
+                navToggle.style.borderRadius = navSidebar.classList.contains('open') ? '0 12px 12px 0' : '0 12px 12px 0';
+            });
+
+            // Initial hide: find first page_break and hide everything after it
+            let foundBreak = false;
+            wrappers.forEach((wrapper) => {
+                if (foundBreak) {
+                    wrapper.classList.add('hidden');
+                } else if (wrapper.querySelector('.continue-btn')) {
+                    foundBreak = true;
+                }
+            });
+
+            // Continue button logic
+            document.querySelectorAll('.continue-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const currentWrapper = e.target.closest('.section-wrapper');
+                    const currentIndex = parseInt(currentWrapper.id.split('-')[1]);
+                    e.target.parentElement.style.display = 'none';
+
+                    let nextIndex = currentIndex + 1;
+                    while (nextIndex < wrappers.length) {
+                        wrappers[nextIndex].classList.remove('hidden');
+                        if (wrappers[nextIndex].querySelector('.continue-btn')) break;
+                        nextIndex++;
+                    }
+                    if (wrappers[currentIndex + 1]) wrappers[currentIndex + 1].scrollIntoView({ behavior: 'smooth' });
+                });
+            });
+
+            // Nav jump: reveal all sections up to and including target
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    const targetIdx = parseInt(link.getAttribute('data-target'));
+                    // Unhide all sections up to target
+                    for (let i = 0; i <= targetIdx; i++) {
+                        wrappers[i].classList.remove('hidden');
+                        // Hide continue buttons for sections we're skipping past
+                        if (i < targetIdx) {
+                            const pb = wrappers[i].querySelector('.page-break');
+                            if (pb) pb.style.display = 'none';
+                        }
+                    }
+                    // Scroll to target
+                    wrappers[targetIdx].scrollIntoView({ behavior: 'smooth' });
+                    // Close sidebar
+                    navSidebar.classList.remove('open');
+                    navToggle.textContent = '☰';
+                    navToggle.style.left = '0';
+                    // Highlight active
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+                });
+            });
+
+            // Quiz Logic (per question block)
+            document.querySelectorAll('.quiz-question-block').forEach(questionBlock => {
+                const opts = questionBlock.querySelectorAll('.quiz-opt');
+                const feedback = questionBlock.querySelector('.quiz-feedback');
+
+                opts.forEach(opt => {
+                    const answerQuestion = () => {
+                        if (questionBlock.classList.contains('answered')) return;
+                        questionBlock.classList.add('answered');
+                        opt.classList.add('selected');
+                        const isCorrect = opt.getAttribute('data-correct') === 'true';
+
+                        if (isCorrect) {
+                            opt.classList.add('correct');
+                            feedback.querySelector('.feedback-correct').classList.remove('hidden');
+                        } else {
+                            opt.classList.add('incorrect');
+                            feedback.querySelector('.feedback-incorrect').classList.remove('hidden');
+                            const correctOpt = questionBlock.querySelector('.quiz-opt[data-correct="true"]');
+                            if (correctOpt) correctOpt.classList.add('correct');
+                        }
+
+                        feedback.classList.remove('hidden');
+                    };
+
+                    opt.addEventListener('click', answerQuestion);
+                    opt.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            answerQuestion();
+                        }
+                    });
+                });
+            });
+
+            // Accordion Logic
+            document.querySelectorAll('.accordion-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const content = header.nextElementSibling;
+                    const icon = header.querySelector('.accordion-toggle-icon');
+                    const isHidden = content.classList.contains('hidden');
+                    content.classList.toggle('hidden');
+                    icon.textContent = isHidden ? '−' : '+';
+                });
+            });
+        });
+
+        // Highlight.js
+        document.querySelectorAll('.syntax-strip pre code').forEach(el => {
+            hljs.highlightElement(el);
+        });
+    </script></p>
+<p>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon="{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;b856efea05a540eb867e568e2588268c&quot;,&quot;r&quot;:1,&quot;spa&quot;:2}" crossorigin="anonymous"></script>
+</p></body></html>

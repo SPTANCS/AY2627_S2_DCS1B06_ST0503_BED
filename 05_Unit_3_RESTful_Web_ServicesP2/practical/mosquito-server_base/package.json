@@ -1,0 +1,27 @@
+{
+  "name": "mosquito-server",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "vitest run",
+    "test:2": "vitest run tests/section-02.test.js",
+    "test:3": "vitest run tests/section-03.test.js",
+    "test:4": "vitest run tests/section-04.test.js",
+    "test:5": "vitest run tests/section-05.test.js",
+    "test:6": "vitest run tests/section-06.test.js",
+    "test:7": "vitest run tests/section-07.test.js",
+    "test:8": "vitest run tests/section-08.test.js",
+    "test:9": "vitest run tests/section-09.test.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4",
+    "supertest": "^7.2.2",
+    "vitest": "^2.0.5"
+  }
+}

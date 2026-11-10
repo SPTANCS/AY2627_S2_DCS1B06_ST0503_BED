@@ -1,0 +1,22 @@
+info:
+  name: reports update by ID
+  type: http
+  seq: 1
+
+http:
+  method: PUT
+  url: http://localhost:3000/api/reports/1
+  body:
+    type: json
+    data: |-
+      {
+        "blockId": 1,
+        "larvaeCount": 20  
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

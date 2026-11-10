@@ -1,0 +1,14 @@
+info:
+  name: blocks get by ID
+  type: http
+
+http:
+  method: GET
+  url: http://localhost:3000/api/blocks/2
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

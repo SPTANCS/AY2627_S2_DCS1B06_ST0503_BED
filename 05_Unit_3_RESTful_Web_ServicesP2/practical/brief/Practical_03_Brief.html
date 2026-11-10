@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refactoring an Express App: Routes, Controllers, Utils &amp; Middleware</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&amp;family=Syne:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/vs2015.min.css">
+    <style>
+        :root {
+            --bg: #F5F2EB;
+            --ink: #1a1a18;
+            --ink2: #4a4a46;
+            --ink3: #8a8a84;
+            --accent: #D45C2A;
+            --border: #D6D0C4;
+            --card: #FDFAF5;
+            --blue-light: #DDE9F7;
+            --blue: #1E5FA8;
+            --yellow-light: #FDF5D4;
+            --yellow: #C69A00;
+            --mono: 'Roboto Mono', monospace;
+            --head: 'Syne', sans-serif;
+            --body: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--ink); font-family: var(--body); line-height: 1.6; }
+        
+        .header { background: #1a1a18; color: #FDFAF5; padding: 3rem; position: relative; overflow: hidden; }
+        .header-meta { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #7a7a74; margin-bottom: 12px; }
+        .header h1 { font-family: var(--head); font-size: 42px; font-weight: 800; line-height: 1.1; margin-bottom: 14px; }
+        .header-sub { font-size: 15px; color: #b0b0a8; max-width: 560px; white-space: pre-wrap; }
+
+        .container { max-width: 860px; margin: 0 auto; padding: 48px; }
+
+        .phase-header { display: flex; align-items: center; gap: 14px; margin: 44px 0 18px; }
+        .phase-pill { font-family: var(--mono); font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 4px 12px; border-radius: 3px; }
+        .pill-guided { background: var(--blue-light); color: var(--blue); }
+        .pill-solo { background: #DFF0E8; color: #2A7D4F; }
+        .pill-query { background: #EEE6F7; color: #6B3FA0; }
+        .pill-custom { background: #F0F0F0; color: #666; border: 1px solid var(--border); }
+        .labels-list { display: flex; gap: 8px; flex-wrap: wrap; }
+        .phase-line { flex: 1; height: 1px; background: var(--border); }
+        .phase-title { font-family: var(--head); font-size: 13px; font-weight: 700; color: var(--ink3); line-height: 1.5; padding-bottom: 2px; }
+
+        .task-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+        .task-header { display: flex; padding: 22px 28px; border-bottom: 1px solid var(--border); gap: 16px; }
+        .task-number { font-family: var(--head); font-size: 32px; font-weight: 800; color: var(--blue); opacity: 0.3; line-height: 1.2; }
+        .task-title { font-family: var(--head); font-size: 19px; font-weight: 700; line-height: 1.4; padding-bottom: 2px; }
+        .task-subtitle { font-size: 13px; color: var(--ink3); line-height: 1.4; white-space: pre-wrap; }
+        .task-body { padding: 22px 28px; }
+        .task-body p { font-size: 14px; color: var(--ink2); margin-bottom: 14px; }
+        .task-body ul, .task-body p ul { padding-left: 32px !important; margin-bottom: 16px; list-style-type: disc !important; }
+        .task-body ol, .task-body p ol { padding-left: 32px !important; margin-bottom: 16px; list-style-type: decimal !important; }
+        .task-body li { margin-bottom: 8px; font-size: 14px; color: var(--ink2); display: list-item !important; }
+
+        .syntax-strip { background: #1e1e1e; border-radius: 8px; padding: 0; margin: 14px 0; color: #d4d4d4; font-family: var(--mono); font-size: 12.5px; overflow: hidden; position: relative; }
+        .syntax-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 16px 0; }
+        .code-filename { font-family: var(--mono); font-size: 10px; color: #9cdcfe; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .syntax-lang { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: #6a9955; margin-left: auto; }
+        .syntax-strip pre { margin: 0; padding: 12px 16px 16px; overflow-x: auto; }
+        .syntax-strip pre code { background: none !important; padding: 0 !important; color: inherit; font-size: 12.5px; line-height: 1.8; }
+        .syntax-strip .hljs { background: transparent !important; padding: 0 !important; }
+        .hint-box { display: flex; gap: 12px; padding: 13px 16px; border-radius: 8px; margin: 12px 0; border-left: 3px solid; }
+        .hint-box.blue { background: var(--blue-light); border-color: var(--blue); }
+        .hint-box.yellow { background: var(--yellow-light); border-color: var(--yellow); }
+        .hint-box p { font-size: 13px; margin: 0; }
+
+        .steps-container { display: flex; flex-direction: column; gap: 16px; margin: 24px 0; }
+        .step-item { display: flex; gap: 16px; align-items: flex-start; }
+        .step-badge {
+            font-family: var(--mono);
+            font-size: 11px;
+            width: 26px;
+            height: 26px;
+            background: var(--blue-light);
+            color: var(--blue);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-weight: 700;
+        }
+        .step-content { flex: 1; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+        .step-content p { margin-bottom: 8px; }
+
+        code { font-family: var(--mono); background: #ECEAE4; padding: 1px 5px; border-radius: 3px; font-size: 12.5px; display: inline; margin: 0; vertical-align: baseline; }
+        .method-pill { font-family: var(--mono); font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 4px; background: #E6EDFA; color: var(--blue); }
+
+        .page-break { display: flex; justify-content: center; padding: 2rem 0; margin-top: 2rem; }
+        .continue-btn { background: var(--accent); color: white; border: none; padding: 0.75rem 2rem; border-radius: 2rem; font-family: var(--head); font-weight: 700; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 14px rgba(212, 92, 42, 0.3); transition: all 0.2s; }
+        .continue-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(212, 92, 42, 0.4); }
+
+        /* Page break hidden sections */
+        .section-wrapper.hidden { display: none; }
+    </style>
+</head><body><div class="header">
+<div class="header-meta">practical 3</div>
+<h1>Refactoring an Express App: Routes, Controllers, Utils &amp; Middleware</h1>
+<p class="header-sub">Take a mosquito detection server for HDB estates that lives entirely inside one index.js file and refactor it into a clean, layered src/ structure. You will start from a working-but-messy server, split it into routes and controllers, pull repeated logic into utils, and finish by writing reusable middleware.</p>
+</div>
+<div class="container">
+<div class="section-wrapper" id="section-0">
+<div class="phase-header">
+<div class="phase-pill pill-guided">✦ Code-along</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 1 of 9</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">01</div>
+<div class="task-title-block">
+<div class="task-title">Where We Are Starting</div>
+<div class="task-subtitle">A working mosquito detection server, with every single responsibility crammed into one file.</div>
+</div>
+</div>
+<div class="task-body">
+<p>You have been handed a small server for <b>HDB mosquito detection</b>. Field officers submit reports of mosquito larvae found at HDB blocks, and the server stores them in memory. <br><br>The problem is where that code lives. The entire application, meaning the data, the routing, the request handling, and the validation, sits inside a single <code>index.js</code>.</p>
+<p>There are two in-memory arrays: <code>blocks</code> (the HDB blocks being monitored) and <code>reports</code> (each mosquito detection report filed against a block).</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">index.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">import express from 'express';
+
+const app = express();
+app.use(express.json());
+
+// --- In-memory data ---
+const blocks = [
+  { id: 1, blockNumber: '123A', town: 'Tampines', postalCode: '521123' },
+  { id: 2, blockNumber: '456B', town: 'Yishun', postalCode: '760456' }
+];
+
+const reports = [
+  { id: 1, blockId: 1, larvaeCount: 12, reportedAt: '2026-08-01', status: 'open' },
+  { id: 2, blockId: 2, larvaeCount: 3, reportedAt: '2026-08-05', status: 'closed' }
+];
+
+// --- Report endpoints ---
+app.get('/api/reports', (req, res) =&gt; {
+  res.status(200).json(reports);
+});
+
+app.get('/api/reports/:id', (req, res) =&gt; {
+  const report = reports.find((r) =&gt; r.id === Number(req.params.id));
+  if (!report) {
+    return res.status(404).json({ message: 'Report not found' });
+  }
+  res.status(200).json(report);
+});
+
+app.post('/api/reports', (req, res) =&gt; {
+  const { blockId, larvaeCount } = req.body;
+  if (!blockId || larvaeCount === undefined) {
+    return res.status(400).json({ message: 'blockId and larvaeCount are required' });
+  }
+  const newReport = {
+    id: reports.length + 1,
+    blockId,
+    larvaeCount,
+    reportedAt: new Date().toISOString().slice(0, 10),
+    status: 'open'
+  };
+  reports.push(newReport);
+  res.status(201).json(newReport);
+});
+
+// --- Block endpoints ---
+app.get('/api/blocks', (req, res) =&gt; {
+  res.status(200).json(blocks);
+});
+
+app.get('/api/blocks/:id', (req, res) =&gt; {
+  const block = blocks.find((b) =&gt; b.id === Number(req.params.id));
+  if (!block) {
+    return res.status(404).json({ message: 'Block not found' });
+  }
+  res.status(200).json(block);
+});
+
+app.listen(3000, () =&gt; {
+  console.log('Mosquito server running on port 3000');
+});</code></pre>
+</div>
+<p>This file works, but notice the problems that grow with every new feature: <br><br>• The <b>URL paths</b> and the <b>request-handling logic</b> are tangled together, so you cannot see the API surface at a glance.<br>• The <code>find(...)</code> lookup by id will be copy-pasted for every resource.<br>• There is nowhere to put logic that is shared between endpoints (logging, validation, risk scoring).<br>• Adding blocks, inspectors, and fogging schedules would push this past 500 lines.</p>
+<div class="hint-box blue"><span class="hint-icon">💡</span>
+<p>The refactor you are about to do changes <b>zero behaviour</b>. Every endpoint must respond exactly as it does now. That is what makes it a refactor rather than a rewrite, and it is why you should test after every step.</p>
+</div>
+<div class="steps-container">
+<div class="step-item">
+<div class="step-badge">1</div>
+<div class="step-content">Open the starter project in your editor, run <code>npm install</code> in the project root, then run <code>node index.js</code> and confirm your terminal prints <code>Mosquito server running on port 3000</code>.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">2</div>
+<div class="step-content">Read through <code>index.js</code> and find all five endpoints: three for reports and two for blocks. This code already works, so there is nothing to fix here. Your job across the rest of the lesson is to move it without changing what any endpoint returns.</div>
+</div>
+</div>
+<div class="page-break"><button class="continue-btn">Continue</button></div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-1">
+<div class="phase-header">
+<div class="phase-pill pill-guided">✦ Code-along</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 2 of 9</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">02</div>
+<div class="task-title-block">
+<div class="task-title">Planning the src/ Structure</div>
+<div class="task-subtitle">Decide where every piece of code will live before you move a single line.</div>
+</div>
+</div>
+<div class="task-body">
+<p>The target structure separates the app into layers. This is what your project will look like by the end of the lesson:</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">project structure (target)</div>
+<div class="syntax-lang">bash</div>
+</div>
+<pre><code class="language-bash">mosquito-server/
+├── index.js                    # app setup + mounting routes only
+├── package.json
+└── src/
+    ├── data/
+    │   └── store.js            # the in-memory arrays
+    ├── routes/
+    │   ├── reportRoute.js      # WHICH url maps to WHICH handler
+    │   └── blockRoute.js
+    ├── controllers/
+    │   ├── reportController.js # WHAT happens for each request
+    │   └── blockController.js
+    ├── utils/
+    │   ├── collectionUtils.js  # small reusable helpers
+    │   └── riskUtils.js
+    └── middleware/
+        ├── requestLogger.js    # runs BEFORE handlers
+        ├── validateReport.js
+        └── notFound.js</code></pre>
+</div>
+<p>The mental model for each layer: <br><br>• <b>Route</b> is the address book. It only says "<span class="method-pill">GET</span> <code>/</code> goes to <code>getAllReports</code>".<br>• <b>Controller</b> is the worker. It reads <code>req</code>, decides on a result, and calls <code>res.status(...).json(...)</code>.<br>• <b>Utils</b> are pure helper functions. No <code>req</code>, no <code>res</code>, just input in and output out.<br>• <b>Middleware</b> is code that runs on the way <i>into</i> a handler, and either passes control on with <code>next()</code> or ends the request.</p>
+<p>Every section from here on ends with a <b>checkpoint</b>. The starter project ships with one test script per section, so after finishing Section 3 you run <code>npm run test:3</code>, after Section 4 you run <code>npm run test:4</code>, and so on. <br><br>Here is the <code>package.json</code> those scripts live in, showing the first three:</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">package.json</div>
+<div class="syntax-lang">json</div>
+</div>
+<pre><code class="language-json">{
+  "name": "mosquito-server",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "test": "vitest run",
+    "test:2": "vitest run tests/section-02.test.js",
+    "test:3": "vitest run tests/section-03.test.js",
+    "test:4": "vitest run tests/section-04.test.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.0"
+  }
+}</code></pre>
+</div>
+<div class="hint-box yellow"><span class="hint-icon">⚠️</span>
+<p>Relative imports <b>must include the file extension</b>. <code>import x from './src/routes/reportRoute.js'</code> works, but <code>'./src/routes/reportRoute'</code> throws <code>ERR_MODULE_NOT_FOUND</code>. This will catch you at least once, so remember the error message.</p>
+</div>
+<div class="steps-container">
+<div class="step-item">
+<div class="step-badge">1</div>
+<div class="step-content">Open <code>package.json</code> and confirm it contains <code>"type": "module"</code>, which is what lets you use <code>import</code> and <code>export</code>.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">2</div>
+<div class="step-content">In your project root, create the folder <code>src</code>, then create these five folders inside it: <code>src/data</code>, <code>src/routes</code>, <code>src/controllers</code>, <code>src/utils</code>, and <code>src/middleware</code>. Leave them empty for now.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">3</div>
+<div class="step-content">Run <code>npm run test:2</code> and confirm every check passes, which tells you the folders and <code>package.json</code> are set up as the rest of the lesson expects.</div>
+</div>
+</div>
+<div class="page-break"><button class="continue-btn">Continue</button></div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-2">
+<div class="phase-header">
+<div class="phase-pill pill-guided">✦ Code-along</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 3 of 9</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">03</div>
+<div class="task-title-block">
+<div class="task-title">Move the Data Out First</div>
+<div class="task-subtitle">Both controllers will need the arrays, so they must live in a module that anyone can import.</div>
+</div>
+</div>
+<div class="task-body">
+<p>If the arrays stay inside <code>index.js</code>, your controllers cannot reach them. They need a home of their own, and that is what <code>src/data/store.js</code> is for: a module that holds the data and shares it with anyone who imports it.</p>
+<p>Notice the export style used here, because every file in this lesson follows it: declare things normally, then list everything the file shares in <b>one <code>export { ... }</code> statement at the bottom</b>. A reader can jump to the end of any file and immediately see its full public surface.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">src/data/store.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">const blocks = [
+  { id: 1, blockNumber: '123A', town: 'Tampines', postalCode: '521123' },
+  { id: 2, blockNumber: '456B', town: 'Yishun', postalCode: '760456' }
+];
+
+const reports = [
+  { id: 1, blockId: 1, larvaeCount: 12, reportedAt: '2026-08-01', status: 'open' },
+  { id: 2, blockId: 2, larvaeCount: 3, reportedAt: '2026-08-05', status: 'closed' }
+];
+
+// Everything this file shares, in one place at the end
+export { blocks, reports };</code></pre>
+</div>
+<div class="steps-container">
+<div class="step-item">
+<div class="step-badge">1</div>
+<div class="step-content">Create a new file called <code>store.js</code> inside the <code>src/data</code> folder.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">2</div>
+<div class="step-content">Cut both arrays out of <code>index.js</code>, paste them into <code>store.js</code>, and add <code>export { blocks, reports };</code> as the last line.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">3</div>
+<div class="step-content">Confirm the two array declarations are now <b>completely gone</b> from <code>index.js</code>. If you leave a copy behind, you will spend the next hour editing the wrong file.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">4</div>
+<div class="step-content">Run <code>npm run test:3</code> and confirm every check passes before moving on.</div>
+</div>
+</div>
+<div class="page-break"><button class="continue-btn">Continue</button></div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-3">
+<div class="phase-header">
+<div class="phase-pill pill-guided">✦ Code-along</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 4 of 9</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">04</div>
+<div class="task-title-block">
+<div class="task-title">Extract the Controller</div>
+<div class="task-subtitle">Every anonymous arrow function inside app.get(...) becomes a named handler in its own file. You will be walked through the first handler, then write the other two yourself.</div>
+</div>
+</div>
+<div class="task-body">
+<p>The first new file is <code>src/controllers/reportController.js</code>. A controller file holds <b>one function per endpoint</b> and nothing else: no paths, no app setup, no <code>app.listen</code>.</p>
+<p>The function signature does not change. Express still calls it with <code>(req, res)</code>, so the only difference is that the function now has a <b>name</b> and lives in its own file. <br><br>Here is the first one, done for you:</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">src/controllers/reportController.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">import { reports } from '../data/store.js';
+
+// GET /api/reports
+const getAllReports = (req, res) =&gt; {
+  res.status(200).json(reports);
+};
+
+// TODO: Question 1
+// Move the GET /api/reports/:id handler from index.js to here,
+// and name it getReportById.
+
+// TODO: Question 2
+// Move the POST /api/reports handler from index.js to here,
+// and name it createReport.
+
+// Add each new handler's name to this list as you write it
+export { getAllReports };</code></pre>
+</div>
+<div class="hint-box yellow"><span class="hint-icon">⚠️</span>
+<p>Notice the import path is <code>'../data/store.js'</code>, not <code>'./data/store.js'</code>. The controller sits inside <code>src/controllers/</code>, so it must step <b>up one folder</b> with <code>../</code> before going into <code>data</code>. This is the most common error in the whole refactor.</p>
+</div>
+<div class="steps-container">
+<div class="step-item">
+<div class="step-badge">1</div>
+<div class="step-content">Create the file <code>src/controllers/reportController.js</code> and add the <code>import</code> line, the <code>getAllReports</code> function, and the <code>export</code> line shown above.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">2</div>
+<div class="step-content"><b>Question 1:</b> Move the <span class="method-pill">GET</span> <code>/api/reports/:id</code> handler out of <code>index.js</code> into this file and name it <code>getReportById</code>.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">3</div>
+<div class="step-content"><b>Question 2:</b> Move the <span class="method-pill">POST</span> <code>/api/reports</code> handler out of <code>index.js</code> into this file and name it <code>createReport</code>.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">4</div>
+<div class="step-content">Extend the last line to <code>export { getAllReports, getReportById, createReport };</code> so all three handlers are shared.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">5</div>
+<div class="step-content">Delete all three report handlers from <code>index.js</code> now that they have been moved: <span class="method-pill">GET</span> <code>/api/reports</code>, <span class="method-pill">GET</span> <code>/api/reports/:id</code>, and <span class="method-pill">POST</span> <code>/api/reports</code>. Leave the two block handlers alone, because you deal with those in Section 6.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">6</div>
+<div class="step-content">Run <code>npm run test:4</code> and confirm every check passes. Expect the server itself to be broken right now, because <code>index.js</code> no longer answers any report endpoint and nothing is wired up to the controller yet. This checkpoint only verifies that the three handlers exist and are exported, so it still passes.</div>
+</div>
+</div>
+<div class="hint-box blue"><span class="hint-icon">💡</span>
+<p>Name controller functions after <b>what they do</b>, not the HTTP method: <code>getAllReports</code>, <code>getReportById</code>, <code>createReport</code>. A reader should understand the endpoint from the function name alone, without looking at the route file.</p>
+</div>
+<div class="page-break"><button class="continue-btn">Continue</button></div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-4">
+<div class="phase-header">
+<div class="phase-pill pill-guided">✦ Code-along</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 5 of 9</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">05</div>
+<div class="task-title-block">
+<div class="task-title">Create the Route File and Mount It</div>
+<div class="task-subtitle">A router is a mini-app. It owns the paths, and index.js decides where those paths hang.</div>
+</div>
+</div>
+<div class="task-body">
+<p>The matching route file is <code>src/routes/reportRoute.js</code>. It imports <code>Router</code> from Express, registers each path against a controller function, and exports the router at the bottom as the file's <b>default export</b>. <br><br>A route file holds no logic of its own. If you ever find an <code>if</code> statement inside one, it belongs in the controller instead.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">src/routes/reportRoute.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">import { Router } from 'express';
+import {
+  getAllReports,
+  getReportById,
+  createReport
+} from '../controllers/reportController.js';
+
+const router = Router();
+
+// Paths here are RELATIVE to wherever this router is mounted
+router.get('/', getAllReports);
+router.get('/:id', getReportById);
+router.post('/', createReport);
+
+export default router;</code></pre>
+</div>
+<div class="hint-box yellow"><span class="hint-icon">⚠️</span>
+<p>Pass the function <b>reference</b>, not a call: write <code>router.get('/', getAllReports)</code>. Writing <code>getAllReports()</code> with brackets runs the function immediately at startup and registers <code>undefined</code> as the handler.</p>
+</div>
+<p>With the router in place, <code>index.js</code> no longer answers a single report request itself. It creates the app, registers app-wide middleware, mounts the router, and listens. <br><br>The two block handlers stay exactly where they are for now, so your file should look like this:</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">index.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">import express from 'express';
+import reportRoute from './src/routes/reportRoute.js';
+
+const app = express();
+app.use(express.json());
+
+// Every path inside reportRoute is prefixed with /api/reports
+app.use('/api/reports', reportRoute);
+
+// --- Block endpoints: LEAVE THESE HERE, you move them in Section 6 ---
+app.get('/api/blocks', (req, res) =&gt; {
+  ...
+});
+
+app.get('/api/blocks/:id', (req, res) =&gt; {
+  ...
+});
+
+app.listen(3000, () =&gt; {
+  console.log('Mosquito server running on port 3000');
+});</code></pre>
+</div>
+<div class="hint-box blue"><span class="hint-icon">💡</span>
+<p>Paths inside the router are <b>relative to the mount point</b>. Because the router is mounted at <code>/api/reports</code>, <code>router.get('/')</code> answers <code>/api/reports</code> and <code>router.get('/:id')</code> answers <code>/api/reports/:id</code>. If you write the full path inside the router by mistake, the real URL becomes <code>/api/reports/api/reports</code>.</p>
+</div>
+<div class="steps-container">
+<div class="step-item">
+<div class="step-badge">1</div>
+<div class="step-content">Create the file <code>src/routes/reportRoute.js</code> and add the router code shown above, ending with <code>export default router</code>.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">2</div>
+<div class="step-content">In <code>index.js</code>, import the router and mount it with <code>app.use('/api/reports', reportRoute)</code>.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">3</div>
+<div class="step-content">Restart the server and confirm all three report endpoints behave exactly as they did before the refactor, including a <span class="method-pill">POST</span> to <code>/api/reports</code> with body <code>{ "blockId": 1, "larvaeCount": 7 }</code> returning a <code>201</code>.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">4</div>
+<div class="step-content">Run <code>npm run test:5</code>. Please make sure every check passes before you proceed, because everything that follows builds directly on this file structure.</div>
+</div>
+</div>
+<div class="page-break"><button class="continue-btn">Continue</button></div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-5">
+<div class="phase-header">
+<div class="phase-pill pill-solo">★ Do-it-yourself</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 6 of 9</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">06</div>
+<div class="task-title-block">
+<div class="task-title">Your Turn: Build the Blocks Resource</div>
+<div class="task-subtitle">The reports resource is done. Now apply the exact same pattern to blocks, on your own. Every piece of work is marked //TODO: Question N in the scaffold files.</div>
+</div>
+</div>
+<div class="task-body">
+<p>You will create two new files in this section, <code>src/controllers/blockController.js</code> and <code>src/routes/blockRoute.js</code>. <br><br>Scaffolds are provided for both, with the imports already written and the bodies left empty. <b>Complete every TODO in order</b>, and do not change any code outside the TODO comments.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">src/controllers/blockController.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">import { blocks } from '../data/store.js';
+
+// TODO: Question 3
+// Move the GET /api/blocks handler from index.js to here,
+// and name it getAllBlocks.
+
+// TODO: Question 4
+// Move the GET /api/blocks/:id handler from index.js to here,
+// and name it getBlockById.
+
+// TODO: Question 5
+// Export both functions from the bottom of the file, the same way
+// reportController.js does.</code></pre>
+</div>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">src/routes/blockRoute.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">import { Router } from 'express';
+// TODO: Question 6
+// Import getAllBlocks and getBlockById from the block controller.
+// Remember the '../' step up out of src/routes, and the .js extension.
+
+const router = Router();
+
+// TODO: Question 7
+// Register GET '/'    -&gt; getAllBlocks
+// Register GET '/:id' -&gt; getBlockById
+
+export default router;</code></pre>
+</div>
+<div class="steps-container">
+<div class="step-item">
+<div class="step-badge">1</div>
+<div class="step-content">Create the file <code>src/controllers/blockController.js</code>.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">2</div>
+<div class="step-content"><b>Question 3, 4 and 5:</b> Move both block handlers out of <code>index.js</code> into this file, name them as the TODO comments specify, and export both from the bottom of the file. Use <code>reportController.js</code> as your reference.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">3</div>
+<div class="step-content">Create the file <code>src/routes/blockRoute.js</code>.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">4</div>
+<div class="step-content"><b>Question 6 and 7:</b> Import both controller functions and register the two <span class="method-pill">GET</span> routes on the router.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">5</div>
+<div class="step-content"><b>Question 8:</b> In <code>index.js</code>, import <code>blockRoute</code> and mount it with <code>app.use('/api/blocks', blockRoute)</code>, then confirm both old block handlers are gone from <code>index.js</code>.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">6</div>
+<div class="step-content">Restart the server and confirm both block endpoints still work, including <span class="method-pill">GET</span> <code>/api/blocks/99</code> returning a <code>404</code> with the message <code>Block not found</code>.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">7</div>
+<div class="step-content">Run <code>npm run test:6</code> and confirm every check passes before moving on. If a check fails, the message names the endpoint that misbehaved.</div>
+</div>
+</div>
+<div class="page-break"><button class="continue-btn">Continue</button></div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-6">
+<div class="phase-header">
+<div class="phase-pill pill-guided">✦ Code-along</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 7 of 9</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">07</div>
+<div class="task-title-block">
+<div class="task-title">src/utils: Stop Repeating Yourself</div>
+<div class="task-subtitle">The same find-by-id line now sits in two files: getReportById in reportController.js and getBlockById in blockController.js. Duplication like that is the signal to extract a utility.</div>
+</div>
+</div>
+<div class="task-body">
+<p>Here is the duplicated line, once in each controller: <br><br>• <code>reportController.js</code> → <code>reports.find((r) =&gt; r.id === Number(req.params.id))</code><br>• <code>blockController.js</code> → <code>blocks.find((b) =&gt; b.id === Number(req.params.id))</code> <br><br>Only the array and the variable name differ, which means the logic can be written once and handed both. That extracted version is a <b>utility</b>: a pure function that takes arguments, returns a value, and knows nothing about <code>req</code>, <code>res</code>, or Express. Knowing nothing about Express is exactly what makes it reusable across controllers and easy to test on its own. <br><br>You will create two utility files in this section, one for generic array work and one for mosquito risk scoring.</p>
+<p>The first utils file is <code>src/utils/collectionUtils.js</code>, for helpers that work on <i>any</i> array of records:</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">src/utils/collectionUtils.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">/**
+ * Finds an item by numeric id in any array of objects that has an `id`.
+ * Works for blocks, reports, inspectors, anything.
+ */
+const findById = (collection, id) =&gt;
+  collection.find((item) =&gt; item.id === Number(id));
+
+/**
+ * Returns the next id for an in-memory collection.
+ * Safer than collection.length + 1, which repeats an id if a record is ever removed.
+ */
+const getNextId = (collection) =&gt; {
+  let highestId = 0;
+
+  for (const item of collection) {
+    if (item.id &gt; highestId) {
+      highestId = item.id;
+    }
+  }
+
+  return highestId + 1;
+};
+
+export { findById, getNextId };</code></pre>
+</div>
+<p>The second is <code>src/utils/riskUtils.js</code>, which holds logic specific to mosquito detection: turning a raw larvae count into a risk level that NEA officers act on.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">src/utils/riskUtils.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">/**
+ * Maps a larvae count to an HDB mosquito risk level.
+ *   &gt;= 10 -&gt; high    (fogging required)
+ *   &gt;= 5  -&gt; medium  (follow-up inspection)
+ *   else  -&gt; low
+ */
+const getRiskLevel = (larvaeCount) =&gt; {
+  if (larvaeCount &gt;= 10) return 'high';
+  if (larvaeCount &gt;= 5) return 'medium';
+  return 'low';
+};
+
+/**
+ * Adds a computed riskLevel field without mutating the original report.
+ */
+const withRiskLevel = (report) =&gt; ({
+  ...report,
+  riskLevel: getRiskLevel(report.larvaeCount)
+});
+
+export { getRiskLevel, withRiskLevel };</code></pre>
+</div>
+<p>With both utils files in place, <code>src/controllers/reportController.js</code> gets shorter and reads like a description of the endpoint instead of a pile of array plumbing. <br><br>The <code>ABSTRACTED OUT</code> comment banners below mark every line that moved into a utils file, showing the code each one replaced:</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">src/controllers/reportController.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">import { reports } from '../data/store.js';
+import { findById, getNextId } from '../utils/collectionUtils.js';
+import { withRiskLevel } from '../utils/riskUtils.js';
+
+const getAllReports = (req, res) =&gt; {
+  res.status(200).json(reports.map(withRiskLevel));
+};
+
+const getReportById = (req, res) =&gt; {
+  // ***** ABSTRACTED OUT *****
+  // was: reports.find((r) =&gt; r.id === Number(req.params.id))
+  const report = findById(reports, req.params.id);
+  // **************************
+
+  if (!report) {
+    return res.status(404).json({ message: 'Report not found' });
+  }
+  res.status(200).json(withRiskLevel(report));
+};
+
+const createReport = (req, res) =&gt; {
+  const { blockId, larvaeCount } = req.body;
+
+  const newReport = {
+    // ***** ABSTRACTED OUT: was reports.length + 1 *****
+    id: getNextId(reports),
+    blockId,
+    larvaeCount,
+    reportedAt: new Date().toISOString().slice(0, 10),
+    status: 'open'
+  };
+
+  reports.push(newReport);
+  res.status(201).json(withRiskLevel(newReport));
+};
+
+export { getAllReports, getReportById, createReport };</code></pre>
+</div>
+<div class="hint-box blue"><span class="hint-icon">💡</span>
+<p>The validation <code>if</code> block has disappeared from <code>createReport</code>, and that is deliberate. It moves into middleware in the next section, which is why the controller can then assume <code>req.body</code> is already valid.</p>
+</div>
+<p>Here is exactly what your endpoints should return once the refactor is done. Notice that reports now carry a computed <code>riskLevel</code>, while blocks are untouched:</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">expected requests and responses</div>
+<div class="syntax-lang">bash</div>
+</div>
+<pre><code class="language-bash"># GET http://localhost:3000/api/reports/1
+# 200 OK
+{
+  "id": 1,
+  "blockId": 1,
+  "larvaeCount": 12,
+  "reportedAt": "2026-08-01",
+  "status": "open",
+  "riskLevel": "high"        # 12 larvae is &gt;= 10
+}
+
+# GET http://localhost:3000/api/reports/2
+# 200 OK
+{
+  "id": 2,
+  "blockId": 2,
+  "larvaeCount": 3,
+  "reportedAt": "2026-08-05",
+  "status": "closed",
+  "riskLevel": "low"         # 3 larvae is &lt; 5
+}
+
+# GET http://localhost:3000/api/reports/99
+# 404 Not Found
+{ "message": "Report not found" }
+
+# POST http://localhost:3000/api/reports
+# body: { "blockId": 2, "larvaeCount": 6 }
+# 201 Created
+{
+  "id": 3,
+  "blockId": 2,
+  "larvaeCount": 6,
+  "reportedAt": "2026-08-31",  # today's date
+  "status": "open",
+  "riskLevel": "medium"        # 6 larvae is &gt;= 5 but &lt; 10
+}
+
+# GET http://localhost:3000/api/blocks/1
+# 200 OK - unchanged, because blocks have no larvae count
+{
+  "id": 1,
+  "blockNumber": "123A",
+  "town": "Tampines",
+  "postalCode": "521123"
+}</code></pre>
+</div>
+<div class="steps-container">
+<div class="step-item">
+<div class="step-badge">1</div>
+<div class="step-content">Create the file <code>src/utils/collectionUtils.js</code> and add <code>findById</code> and <code>getNextId</code>, exported at the bottom.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">2</div>
+<div class="step-content">Create the file <code>src/utils/riskUtils.js</code> and add <code>getRiskLevel</code> and <code>withRiskLevel</code>, exported at the bottom.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">3</div>
+<div class="step-content">Update <code>src/controllers/reportController.js</code> to import and use <code>findById</code>, <code>getNextId</code>, and <code>withRiskLevel</code>, matching the code above.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">4</div>
+<div class="step-content"><b>Question 9:</b> Open your own <code>src/controllers/blockController.js</code> and refactor <code>getBlockById</code> to call <code>findById</code> instead of its hand-written <code>.find(...)</code>. Do not use <code>getRiskLevel</code> here, because risk applies to reports and not to blocks.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">5</div>
+<div class="step-content">Restart the server and work through every request in the box above, checking both the status code and the exact response body against what is shown.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">6</div>
+<div class="step-content">Run <code>npm run test:7</code> and make sure every check passes before you move on.</div>
+</div>
+</div>
+<div class="hint-box yellow"><span class="hint-icon">⚠️</span>
+<p>Keep utils <b>free of <code>res</code></b>. If you find yourself writing <code>res.status(404)</code> inside a util, that logic belongs in a controller or in middleware. A util that sends responses can no longer be reused anywhere else.</p>
+</div>
+<div class="page-break"><button class="continue-btn">Continue</button></div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-7">
+<div class="phase-header">
+<div class="phase-pill pill-guided">✦ Code-along</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 8 of 9</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">08</div>
+<div class="task-title-block">
+<div class="task-title">src/middleware: Reusable Logic That Runs Before Your Handlers</div>
+<div class="task-subtitle">The final layer. Write a rule once, then apply it to as many routes as you like.</div>
+</div>
+</div>
+<div class="task-body">
+<p>A middleware function has the signature <code>(req, res, next)</code>. It can inspect or change the request, then either call <code>next()</code> to pass control to the next function in the chain, or end the request itself with a response. <br><br>Those are the only two endings. If a middleware does neither, the request hangs forever with no error and no response.</p>
+<p>Start with a logger, in <code>src/middleware/requestLogger.js</code>:</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">src/middleware/requestLogger.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">// Runs for EVERY request in the app
+const requestLogger = (req, res, next) =&gt; {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${req.method} ${req.originalUrl}`);
+  next(); // without this, the request never reaches the controller
+};
+
+export { requestLogger };</code></pre>
+</div>
+<p>Next comes the validation you removed from <code>createReport</code> earlier, in <code>src/middleware/validateReport.js</code>. <br><br>Written as middleware, the <b>same function</b> can guard the <span class="method-pill">POST</span> and the <span class="method-pill">PUT</span> endpoints, and that is the reusability payoff:</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">src/middleware/validateReport.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">import { blocks } from '../data/store.js';
+import { findById } from '../utils/collectionUtils.js';
+
+const validateReport = (req, res, next) =&gt; {
+  const { blockId, larvaeCount } = req.body;
+
+  if (blockId === undefined || larvaeCount === undefined) {
+    return res.status(400).json({
+      message: 'blockId and larvaeCount are required'
+    });
+  }
+
+  if (typeof larvaeCount !== 'number' || larvaeCount &lt; 0) {
+    return res.status(400).json({
+      message: 'larvaeCount must be a number that is 0 or greater'
+    });
+  }
+
+  if (!findById(blocks, blockId)) {
+    return res.status(404).json({
+      message: `No HDB block found with id ${blockId}`
+    });
+  }
+
+  next(); // all checks passed, hand over to the controller
+};
+
+export { validateReport };</code></pre>
+</div>
+<p>Middleware is registered at different levels. App level runs on every request, so that is where the logger goes:</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">index.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">import express from 'express';
+import reportRoute from './src/routes/reportRoute.js';
+import blockRoute from './src/routes/blockRoute.js';
+import { requestLogger } from './src/middleware/requestLogger.js';
+
+const app = express();
+
+app.use(express.json());
+app.use(requestLogger); // APP level: runs on every request
+
+app.use('/api/reports', reportRoute);
+app.use('/api/blocks', blockRoute);
+
+app.listen(3000, () =&gt; {
+  console.log('Mosquito server running on port 3000');
+});</code></pre>
+</div>
+<p>Route level runs only for one endpoint, so that is where the validator goes:</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">src/routes/reportRoute.js</div>
+<div class="syntax-lang">javascript</div>
+</div>
+<pre><code class="language-javascript">import { Router } from 'express';
+import {
+  getAllReports,
+  getReportById,
+  createReport
+} from '../controllers/reportController.js';
+import { validateReport } from '../middleware/validateReport.js';
+
+const router = Router();
+
+router.get('/', getAllReports);
+router.get('/:id', getReportById);
+
+// ROUTE level: validateReport runs first, createReport only if next() was called
+router.post('/', validateReport, createReport);
+
+export default router;</code></pre>
+</div>
+<div class="hint-box blue"><span class="hint-icon">💡</span>
+<p>Order matters. <code>app.use(express.json())</code> must come <b>before</b> anything that reads <code>req.body</code>, and <code>requestLogger</code> must be registered before the route mounts or it will never fire for them.</p>
+</div>
+<div class="steps-container">
+<div class="step-item">
+<div class="step-badge">1</div>
+<div class="step-content">Create the two middleware files shown above, <code>src/middleware/requestLogger.js</code> and <code>src/middleware/validateReport.js</code>.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">2</div>
+<div class="step-content">Update <code>index.js</code> and <code>src/routes/reportRoute.js</code> to match their snippets above, so the logger runs app-wide and <code>validateReport</code> guards the <span class="method-pill">POST</span> route.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">3</div>
+<div class="step-content">Send a <span class="method-pill">POST</span> to <code>/api/reports</code> with body <code>{ "larvaeCount": 4 }</code> and confirm you get a <code>400</code>. Then send <code>{ "blockId": 99, "larvaeCount": 4 }</code> and confirm you get a <code>404</code>. Finally send a valid body and confirm the <code>201</code> still works.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">4</div>
+<div class="step-content">Watch your terminal while testing and confirm every request prints exactly one log line.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">5</div>
+<div class="step-content">Run <code>npm run test:8</code> and confirm every check passes before moving on.</div>
+</div>
+</div>
+<div class="page-break"><button class="continue-btn">Continue</button></div>
+</div>
+</div>
+</div>
+<div class="section-wrapper" id="section-8">
+<div class="phase-header">
+<div class="phase-pill pill-solo">★ Do-it-yourself</div>
+<div class="phase-line"></div>
+<div class="phase-title">Step 9 of 9</div>
+</div>
+<div class="task-card">
+<div class="task-header">
+<div class="task-number">09</div>
+<div class="task-title-block">
+<div class="task-title">Your Turn: Reuse the Middleware</div>
+<div class="task-subtitle">Prove the payoff by attaching the same validator to a second endpoint, then write a middleware of your own. Each question names the file to work in, and the starter repo marks the exact spot with //TODO: Question N.</div>
+</div>
+</div>
+<div class="task-body">
+<p>You will add a <span class="method-pill">PUT</span> endpoint that replaces an existing report. <br><br>It needs the <b>exact same body validation</b> as <span class="method-pill">POST</span>, so you must reuse <code>validateReport</code> rather than copying its checks into the controller.</p>
+<p>Here is exactly what the two new pieces must do. Work backwards from these four requests: the status code and the body tell you every rule your code has to satisfy.</p>
+<div class="syntax-strip">
+<div class="syntax-meta">
+<div class="code-filename">expected requests and responses</div>
+<div class="syntax-lang">bash</div>
+</div>
+<pre><code class="language-bash"># PUT http://localhost:3000/api/reports/1
+# body: { "blockId": 2, "larvaeCount": 20 }
+# 200 OK - note that reportedAt and status are left alone
+{
+  "id": 1,
+  "blockId": 2,
+  "larvaeCount": 20,
+  "reportedAt": "2026-08-01",
+  "status": "open",
+  "riskLevel": "high"
+}
+
+# PUT http://localhost:3000/api/reports/99
+# body: { "blockId": 2, "larvaeCount": 20 }
+# 404 Not Found - the body was fine, there is just no report 99
+{ "message": "Report not found" }
+
+# PUT http://localhost:3000/api/reports/1
+# body: { "larvaeCount": 20 }
+# 400 Bad Request - validateReport stopped this before updateReport ever ran
+{ "message": "blockId and larvaeCount are required" }
+
+# GET http://localhost:3000/api/abcdefgxxxxxx
+# 404 Not Found - answered by your notFound middleware
+{ "message": "Bzzt! Mosquito server went splat, nothing found at /api/abcdefgxxxxxx" }</code></pre>
+</div>
+<div class="steps-container">
+<div class="step-item">
+<div class="step-badge">1</div>
+<div class="step-content"><b>Question 10:</b> Write <code>updateReport</code> in <code>src/controllers/reportController.js</code>, below the existing handlers, and add it to the export list at the bottom. Reuse <code>findById</code> and <code>withRiskLevel</code> instead of writing new helpers.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">2</div>
+<div class="step-content"><b>Question 11:</b> Register the <span class="method-pill">PUT</span> route in <code>src/routes/reportRoute.js</code>, with <code>validateReport</code> running before <code>updateReport</code>.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">3</div>
+<div class="step-content"><b>Question 12:</b> Write the <code>notFound</code> middleware in <code>src/middleware/notFound.js</code>. It takes <code>(req, res)</code> and does not call <code>next()</code>, because it is the end of the line.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">4</div>
+<div class="step-content"><b>Question 13:</b> Register <code>notFound</code> in <code>index.js</code> with <code>app.use(notFound)</code>, placed <b>after</b> both route mounts and before <code>app.listen</code>.</div>
+</div>
+<div class="step-item">
+<div class="step-badge">5</div>
+<div class="step-content">Send all four requests from the box above and confirm you get the exact status code and body shown for each.</div>
+</div>
+</div>
+<div class="hint-box yellow"><span class="hint-icon">⚠️</span>
+<p>If <code>notFound</code> is registered <b>before</b> your routes, every single request will 404. Express runs middleware in registration order, so a catch-all placed first will answer everything. Position it last.</p>
+</div>
+<p><b>Final checklist.</b> Your <code>index.js</code> should now contain only: imports, <code>express.json()</code>, <code>requestLogger</code>, two <code>app.use(...)</code> route mounts, <code>notFound</code>, and <code>app.listen</code>. <br><br>It should contain no arrays, no <code>find(...)</code>, and no <code>res.status(...).json(...)</code>. If anything else is still in there, it belongs somewhere inside <code>src/</code>. <br><br>When the checklist looks right and <code>npm run test</code> passes end to end, you are ready to submit.</p>
+</div>
+</div>
+</div>
+</div>
+<p>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+</p>
+<p><script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const wrappers = document.querySelectorAll('.section-wrapper');
+            let lastVisibleIndex = -1;
+
+            // Find the first page break and hide everything after it
+            let foundBreak = false;
+            wrappers.forEach((wrapper, index) => {
+                if (foundBreak) {
+                    wrapper.classList.add('hidden');
+                } else {
+                    lastVisibleIndex = index;
+                    if (wrapper.querySelector('.continue-btn')) {
+                        foundBreak = true;
+                    }
+                }
+            });
+
+            document.querySelectorAll('.continue-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const currentWrapper = e.target.closest('.section-wrapper');
+                    const currentId = currentWrapper.id;
+                    const currentIndex = parseInt(currentId.split('-')[1]);
+                    
+                    // Hide the button that was clicked
+                    e.target.parentElement.style.display = 'none';
+
+                    // Show next sections until the next break
+                    let nextIndex = currentIndex + 1;
+                    while (nextIndex < wrappers.length) {
+                        const nextWrapper = wrappers[nextIndex];
+                        nextWrapper.classList.remove('hidden');
+                        
+                        if (nextWrapper.querySelector('.continue-btn')) {
+                            break;
+                        }
+                        nextIndex++;
+                    }
+                    
+                    // Scroll to the first newly revealed section
+                    wrappers[currentIndex + 1].scrollIntoView({ behavior: 'smooth' });
+                });
+            });
+        });
+
+        // Highlight.js
+        document.querySelectorAll('.syntax-strip pre code').forEach(el => {
+            hljs.highlightElement(el);
+        });
+    </script></p>
+<p>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v3d52b47920f24c319d37e2661827c42b1787588026925" integrity="sha512-d9sL6GJLXn6fInD1+TVXhTcQOsmxeHfmHAvwGDIxp5TO+uo1fiWW7mHomMj4MLRlCsJDTqXzWLHJFFlPCEIj/A==" data-cf-beacon="{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;b856efea05a540eb867e568e2588268c&quot;,&quot;r&quot;:1}" crossorigin="anonymous"></script>
+</p></body></html>

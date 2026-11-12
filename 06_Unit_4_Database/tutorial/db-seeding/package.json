@@ -1,11 +1,10 @@
 {
-  "name": "db-seeding-starter-complete",
+  "name": "db-seeding",
   "version": "1.0.0",
   "description": "Your goal: build the `npm run db` command that creates SQLite tables and seeds them with the sample data, using Drizzle ORM. Follow the lesson.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon index.js",
     "db": "node src/db/seed.js"
   },
   "keywords": [],

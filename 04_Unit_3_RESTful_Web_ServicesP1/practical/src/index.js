@@ -246,8 +246,13 @@ app.delete('/snacks/:id', (req, res) => {
   // Respond with res.status(200).json(deletedItem)
   const id = Number(req.params.id);
 
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/find
   const snack = snacks.find(item => item.id === id);
 
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/indexOf
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/splice
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/slice
+  
   if (!snack) {
     return res.status(404).json({ error: 'Item not found' });
   }

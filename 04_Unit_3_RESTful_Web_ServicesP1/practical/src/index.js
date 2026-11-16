@@ -238,21 +238,40 @@ app.post("/electronics", (req, res) => {
 });
 
 // TODO Q3: DELETE /snacks/:id - delete a snack by ID (INSTRUCTOR LED)
-app.delete("/snacks/:id", (req, res) => {
+app.delete('/snacks/:id', (req, res) => {
   // Parse id from req.params, convert to Number
   // Find the item (hint: .find())
   // If not found, return res.status(404).json(...)
   // Remove from array (hint: .filter() and reassign, or .splice())
   // Respond with res.status(200).json(deletedItem)
+  const id = Number(req.params.id);
+
+  const snack = snacks.find(item => item.id === id);
+
+  if (!snack) {
+    return res.status(404).json({ error: 'Item not found' });
+  }
+  snacks = snacks.filter(item => item.id !== id); // there are other ways
+  res.json(snack);
 });
 
 // TODO Q4: DELETE /electronics/:id - delete an electronic item by ID (STUDENT DIY)
-app.delete("/electronics/:id", (req, res) => {
+app.delete('/electronics/:id', (req, res) => {
   // Same pattern as Q3 but for electronics array
+  const id = Number(req.params.id);
+
+  const electronic = electronics.find(item => item.id === id);
+  
+  if (!electronic) {
+    return res.status(404).json({ error: 'Item not found' });
+  }
+  
+  electronics = electronics.filter(item => item.id !== id);
+  res.json(electronic);
 });
 
 // TODO Q5: PUT /snacks/:id - update a snack by ID (INSTRUCTOR LED)
-app.put("/snacks/:id", (req, res) => {
+app.put('/snacks/:id', (req, res) => {
   // Parse id from req.params, convert to Number
   // Find the item (hint: .find())
   // If not found, return res.status(404).json(...)
@@ -260,11 +279,60 @@ app.put("/snacks/:id", (req, res) => {
   // Only update fields that are !== undefined
   // Validate price/quantity before updating; return res.status(400).json(...) if invalid
   // Respond with res.status(200).json(updatedItem)
+  const id    = Number(req.params.id);
+  const snack = snacks.find(item => item.id === id);
+
+  if (!snack) {
+    return res.status(404).json({ error: 'Item not found' });
+  }
+  const name     = req.body.name;
+  const price    = req.body.price === undefined ? undefined : Number(req.body.price);
+  const quantity = req.body.quantity  === undefined ? undefined : Number(req.body.quantity);;
+
+  if (name !== undefined) snack.name = name;
+  if (price !== undefined) {
+    if (Number.isNaN(price) || price <= 0) {
+      return res.status(400).json({ error: 'price must be a positive number.' });
+    }
+    snack.price = price;
+  }
+  if (quantity !== undefined) {
+    if (!Number.isInteger(quantity) || quantity < 0) {
+      return res.status(400).json({ error: 'quantity must be a non-negative integer.' });
+    }
+    snack.quantity = quantity;
+  }
+  res.json(snack);
 });
 
 // TODO Q6: PUT /electronics/:id - update an electronic item by ID (STUDENT DIY)
-app.put("/electronics/:id", (req, res) => {
+app.put('/electronics/:id', (req, res) => {
   // Same pattern as Q5 but for electronics array
+  const id = Number(req.params.id);
+  const electronic = electronics.find(item => item.id === id);
+  if (!electronic) {
+    return res.status(404).json({ error: 'Item not found' });
+  }
+  const name     = req.body.name;
+  const price    = req.body.price === undefined ? undefined : Number(req.body.price);
+  const quantity = req.body.quantity  === undefined ? undefined : Number(req.body.quantity);;
+
+  if (name !== undefined) 
+    electronic.name = name;
+
+  if (price !== undefined) {
+    if (Number.isNaN(price) || price <= 0) {
+      return res.status(400).json({ error: 'price must be a positive number.' });
+    }
+    electronic.price = price;
+  }
+  if (quantity !== undefined) {
+    if (!Number.isInteger(quantity) || quantity < 0) {
+      return res.status(400).json({ error: 'quantity must be a non-negative integer.' });
+    }
+    electronic.quantity = quantity;
+  }
+  res.json(electronic);
 });
 
 // ============================================================

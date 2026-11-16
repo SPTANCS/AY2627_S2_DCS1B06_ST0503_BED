@@ -1,0 +1,21 @@
+info:
+  name: todos add by user ID
+  type: http
+
+http:
+  method: POST
+  url: http://localhost:3000/users/1/todos
+  body:
+    type: json
+    data: |-
+      {
+        "title": "Complete JavaScript assignment",
+        "dueDate": "2026-11-13T00:00:00.000Z"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
